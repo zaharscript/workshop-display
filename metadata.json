@@ -1,0 +1,8 @@
+{
+  "name": "Workshop Queue & Live Display System",
+  "description": "Real-time workshop service queue display system with TV display monitor view and mobile operator control panel.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
