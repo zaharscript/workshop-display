@@ -95,7 +95,15 @@ export function useRealtimeQueue() {
 
     // Subscribe to BroadcastChannel cross-tab fallback
     const unsubscribeBroadcast = apiClient.subscribeToBroadcastChannel((msg) => {
-      if (msg.type === 'VEHICLE_CREATED' || msg.type === 'VEHICLE_UPDATED' || msg.type === 'VEHICLE_DELETED' || msg.type === 'DATA_RESET') {
+      if (
+        msg.type === 'VEHICLE_CREATED' ||
+        msg.type === 'VEHICLE_UPDATED' ||
+        msg.type === 'VEHICLE_DELETED' ||
+        msg.type === 'ANNOUNCEMENT_ADDED' ||
+        msg.type === 'ANNOUNCEMENT_UPDATED' ||
+        msg.type === 'ANNOUNCEMENT_DELETED' ||
+        msg.type === 'DATA_RESET'
+      ) {
         refreshData();
       }
     });
@@ -129,6 +137,21 @@ export function useRealtimeQueue() {
     return await apiClient.addAnnouncement(text, type);
   };
 
+  const deleteAnnouncement = async (id: string) => {
+    setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+    return await apiClient.deleteAnnouncement(id);
+  };
+
+  const updateAnnouncement = async (
+    id: string,
+    updates: { text?: string; type?: 'info' | 'alert' | 'promo'; active?: boolean }
+  ) => {
+    setAnnouncements((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, ...updates, text: updates.text ? updates.text.toUpperCase() : a.text } : a))
+    );
+    return await apiClient.updateAnnouncement(id, updates);
+  };
+
   const resetData = async () => {
     return await apiClient.resetData();
   };
@@ -160,6 +183,8 @@ export function useRealtimeQueue() {
     updateVehicleRecord,
     deleteVehicle,
     addAnnouncement,
+    deleteAnnouncement,
+    updateAnnouncement,
     resetData,
     refreshData,
   };

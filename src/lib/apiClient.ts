@@ -128,6 +128,41 @@ export const apiClient = {
     }
   },
 
+  async deleteAnnouncement(id: string): Promise<{ success: boolean; announcementId: string }> {
+    try {
+      const res = await fetch(`/api/announcements/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete announcement');
+      const data = await res.json();
+      this.broadcastLocalMessage('ANNOUNCEMENT_DELETED', data);
+      return data;
+    } catch (err) {
+      console.error('API deleteAnnouncement error:', err);
+      throw err;
+    }
+  },
+
+  async updateAnnouncement(
+    id: string,
+    updates: { text?: string; type?: 'info' | 'alert' | 'promo'; active?: boolean }
+  ): Promise<{ announcement: Announcement }> {
+    try {
+      const res = await fetch(`/api/announcements/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error('Failed to update announcement');
+      const data = await res.json();
+      this.broadcastLocalMessage('ANNOUNCEMENT_UPDATED', data);
+      return data;
+    } catch (err) {
+      console.error('API updateAnnouncement error:', err);
+      throw err;
+    }
+  },
+
   async resetData(): Promise<void> {
     try {
       const res = await fetch('/api/reset', { method: 'POST' });

@@ -104,15 +104,26 @@ class AudioNotifier {
     }
   }
 
-  public speakAnnouncement(text: string) {
+  public speakAnnouncement(text: string, lang: string = 'ms-MY') {
     if (this.isMuted || !this.speechEnabled) return;
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       try {
         window.speechSynthesis.cancel(); // Stop previous
         const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
         utterance.rate = 0.95;
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
+
+        // Try to select a Malay or Indonesian voice if available in system
+        const voices = window.speechSynthesis.getVoices();
+        const msVoice = voices.find(
+          (v) => v.lang.toLowerCase().startsWith('ms') || v.lang.toLowerCase().startsWith('id')
+        );
+        if (msVoice) {
+          utterance.voice = msVoice;
+        }
+
         window.speechSynthesis.speak(utterance);
       } catch (e) {
         console.warn('Speech synthesis error:', e);
@@ -123,7 +134,10 @@ class AudioNotifier {
   public announceCompletion(plateNumber: string, ownerName: string) {
     this.playChime('completed');
     setTimeout(() => {
-      this.speakAnnouncement(`Attention: Car plate ${plateNumber}, for ${ownerName}, service completed. Ready for pickup.`);
+      this.speakAnnouncement(
+        `Perhatian: Kenderaan nombor plat ${plateNumber}, kepunyaan ${ownerName}, servis telah siap. Sila ambil kenderaan anda.`,
+        'ms-MY'
+      );
     }, 600);
   }
 }

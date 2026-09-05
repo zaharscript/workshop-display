@@ -1,6 +1,6 @@
 {
-  "name": "Workshop Queue & Live Display System",
-  "description": "Real-time workshop service queue display system with TV display monitor view and mobile operator control panel.",
+  "name": "QES Ford Autoparts Workshop System",
+  "description": "Real-time service queue display system for QES Ford Autoparts with TV display view and mobile operator panel.",
   "requestFramePermissions": [
     "camera"
   ],

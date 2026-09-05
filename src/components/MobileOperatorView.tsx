@@ -3,25 +3,30 @@ import { VehicleRecord, Mechanic, VehicleStatus, ActivityLog } from '../types';
 import {
   Plus,
   Search,
-  Filter,
-  Car,
-  User,
-  Phone,
   Wrench,
-  Clock,
   CheckCircle2,
   Play,
   Check,
-  ChevronRight,
-  Sparkles,
   History,
-  FileText,
-  AlertCircle,
   Eye,
-  RefreshCw,
+  Car,
+  User,
+  ListChecks,
+  CheckSquare,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { NewVehicleModal } from './NewVehicleModal';
 import { VehicleDetailModal } from './VehicleDetailModal';
+import {
+  calculateServiceProgress,
+  toggleTaskInList,
+  addTaskToList,
+  getDefaultTasksForService,
+  getProgressColorTheme,
+} from '../utils/serviceTasks';
+import { t } from '../lib/i18n';
 
 interface MobileOperatorViewProps {
   vehicles: VehicleRecord[];
@@ -42,13 +47,52 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
   onUpdateStatus,
   onUpdateRecord,
   onDeleteVehicle,
-  onResetData,
 }) => {
   const [activeTab, setActiveTab] = useState<VehicleStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [selectedVehicleForDetail, setSelectedVehicleForDetail] = useState<VehicleRecord | null>(null);
   const [showLogs, setShowLogs] = useState(false);
+  const [addingTaskId, setAddingTaskId] = useState<string | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+
+  const toggleExpandCardTasks = (vehicleId: string) => {
+    setExpandedCards((prev) => ({
+      ...prev,
+      [vehicleId]: !prev[vehicleId],
+    }));
+  };
+
+  const handleToggleTask = async (veh: VehicleRecord, taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const currentTasks = veh.tasks && veh.tasks.length > 0
+      ? veh.tasks
+      : getDefaultTasksForService(veh.serviceType);
+    const updatedTasks = toggleTaskInList(currentTasks, taskId);
+
+    // If vehicle was incoming and technician starts marking jobs done, move to in_progress
+    const anyDone = updatedTasks.some((t) => t.completed);
+    const updates: Partial<VehicleRecord> = { tasks: updatedTasks };
+
+    if (veh.status === 'incoming' && anyDone) {
+      updates.status = 'in_progress';
+      if (!veh.startTime) updates.startTime = new Date().toISOString();
+    }
+
+    await onUpdateRecord(veh.id, updates);
+  };
+
+  const handleAddNewTask = async (veh: VehicleRecord) => {
+    if (!newTaskTitle.trim()) return;
+    const currentTasks = veh.tasks && veh.tasks.length > 0
+      ? veh.tasks
+      : getDefaultTasksForService(veh.serviceType);
+    const updatedTasks = addTaskToList(currentTasks, newTaskTitle);
+    await onUpdateRecord(veh.id, { tasks: updatedTasks });
+    setNewTaskTitle('');
+    setAddingTaskId(null);
+  };
 
   // Filter vehicles
   const filteredVehicles = vehicles.filter((v) => {
@@ -72,16 +116,16 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
   };
 
   return (
-    <div className="min-h-[calc(100vh-5rem)] bg-[#0a0b0e] text-[#e0e0e0] p-4 sm:p-6 pb-24 font-sans">
+    <div className="min-h-[calc(100vh-5rem)] bg-[#353839] text-[#e0e0e0] p-4 sm:p-6 pb-24 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Top Header & Actions Bar (Immersive UI Style) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#15171e] p-5 rounded-xl border border-white/10 shadow-2xl">
+        {/* Top Header & Actions Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#282a2c] p-5 rounded-xl border border-white/10 shadow-2xl">
           <div>
             <span className="text-[#3b82f6] font-mono text-[11px] tracking-widest uppercase block mb-1">
-              OPERATOR CONSOLE // LIVE CONTROL
+              {t('operatorConsole')}
             </span>
             <h2 className="text-xl font-black tracking-tight text-white uppercase flex items-center gap-2">
-              MOBILE <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400">TELEMETRY & INTAKE</span>
+              KONSOL <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400">{t('mobileIntakeTitle')}</span>
             </h2>
           </div>
 
@@ -95,7 +139,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
               }`}
             >
               <History className="w-4 h-4" />
-              <span>Log ({activityLogs.length})</span>
+              <span>{t('log')} ({activityLogs.length})</span>
             </button>
 
             <button
@@ -103,7 +147,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
               className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-mono font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-blue-500/20 transition-all transform hover:scale-[1.02]"
             >
               <Plus className="w-4 h-4" />
-              <span>Intake New Car</span>
+              <span>{t('intakeNewCar')}</span>
             </button>
           </div>
         </div>
@@ -115,15 +159,15 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
             <Search className="w-4 h-4 absolute left-3.5 top-3 text-white/40" />
             <input
               type="text"
-              placeholder="Search plate, owner, make..."
+              placeholder={t('searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#161922] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400 shadow-inner font-mono"
+              className="w-full bg-[#242628] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400 shadow-inner font-mono"
             />
           </div>
 
           {/* Status Tabs */}
-          <div className="flex items-center gap-1 bg-[#15171e] p-1 rounded-xl border border-white/10 overflow-x-auto w-full md:w-auto font-mono">
+          <div className="flex items-center gap-1 bg-[#282a2c] p-1 rounded-xl border border-white/10 overflow-x-auto w-full md:w-auto font-mono">
             <button
               onClick={() => setActiveTab('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
@@ -132,7 +176,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                   : 'text-white/50 hover:text-white hover:bg-white/5'
               }`}
             >
-              All ({counts.all})
+              {t('allStatus')} ({counts.all})
             </button>
 
             <button
@@ -143,7 +187,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                   : 'text-blue-400/60 hover:text-blue-400 hover:bg-white/5'
               }`}
             >
-              Incoming ({counts.incoming})
+              Masuk ({counts.incoming})
             </button>
 
             <button
@@ -154,7 +198,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                   : 'text-orange-400/60 hover:text-orange-400 hover:bg-white/5'
               }`}
             >
-              Repairing ({counts.in_progress})
+              {t('repairingStatus')} ({counts.in_progress})
             </button>
 
             <button
@@ -165,7 +209,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                   : 'text-emerald-400/60 hover:text-emerald-400 hover:bg-white/5'
               }`}
             >
-              Ready ({counts.completed})
+              {t('readyStatus')} ({counts.completed})
             </button>
 
             <button
@@ -176,36 +220,40 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                   : 'text-white/40 hover:bg-white/5'
               }`}
             >
-              Delivered ({counts.delivered})
+              {t('deliveredStatus')} ({counts.delivered})
             </button>
           </div>
         </div>
 
-        {/* Activity Log Drawer Panel if toggled */}
+        {/* Activity Log Drawer Panel */}
         {showLogs && (
-          <div className="bg-[#15171e] border border-white/10 rounded-xl p-4 shadow-xl space-y-3 font-mono">
+          <div className="bg-[#282a2c] border border-white/10 rounded-xl p-4 shadow-xl space-y-3 font-mono">
             <div className="flex items-center justify-between border-b border-white/10 pb-2">
               <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
-                <History className="w-4 h-4" /> Live Activity Audit Log
+                <History className="w-4 h-4" /> {t('liveActivityAuditLog')}
               </h3>
               <button onClick={() => setShowLogs(false)} className="text-xs text-white/40 hover:text-white">
-                Close Log
+                {t('closeLog')}
               </button>
             </div>
             <div className="space-y-2 max-h-48 overflow-y-auto text-xs">
-              {activityLogs.map((log) => (
-                <div key={log.id} className="flex items-center justify-between bg-[#161922] p-2.5 rounded-lg border border-white/5">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded text-[10px] font-bold">
-                      {log.plateNumber}
+              {activityLogs.length === 0 ? (
+                <p className="text-white/40 text-center py-4">{t('noLogsYet')}</p>
+              ) : (
+                activityLogs.map((log) => (
+                  <div key={log.id} className="flex items-center justify-between bg-[#242628] p-2.5 rounded-lg border border-white/5">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded text-[10px] font-bold">
+                        {log.plateNumber}
+                      </span>
+                      <span className="text-white/80 font-medium">{log.action}</span>
+                    </div>
+                    <span className="text-[10px] text-white/40">
+                      {new Date(log.timestamp).toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}
                     </span>
-                    <span className="text-white/80 font-medium">{log.action}</span>
                   </div>
-                  <span className="text-[10px] text-white/40">
-                    {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         )}
@@ -215,18 +263,18 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
           {filteredVehicles.length === 0 ? (
             <div className="col-span-full py-16 flex flex-col items-center justify-center text-white/40 border border-dashed border-white/10 rounded-2xl">
               <Car className="w-12 h-12 mb-3 opacity-30 text-cyan-400" />
-              <p className="text-base font-bold text-white/70">No Vehicles Found</p>
-              <p className="text-xs text-white/30">Try adjusting search or intake a new car</p>
+              <p className="text-base font-bold text-white/70">{t('noVehiclesFound')}</p>
+              <p className="text-xs text-white/30">{t('adjustSearchOrIntake')}</p>
             </div>
           ) : (
             filteredVehicles.map((veh) => (
               <div
                 key={veh.id}
-                className={`bg-[#161922] border rounded-xl p-4 sm:p-5 flex flex-col justify-between shadow-xl transition-all duration-200 hover:border-white/20 ${
+                className={`bg-[#242628] border rounded-xl p-4 sm:p-5 flex flex-col justify-between shadow-xl transition-all duration-200 hover:border-white/20 ${
                   veh.status === 'completed'
-                    ? 'border-emerald-500/40 bg-emerald-950/10'
+                    ? 'border-emerald-500/40 bg-emerald-950/20'
                     : veh.status === 'in_progress'
-                    ? 'border-orange-500/40 bg-[#1c140e]'
+                    ? 'border-orange-500/40 bg-[#2e2620]'
                     : 'border-white/10'
                 }`}
               >
@@ -243,34 +291,34 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                     <div className="flex items-center gap-1.5 font-mono">
                       {veh.priority === 'express' && (
                         <span className="bg-orange-500/20 text-orange-400 border border-orange-500/30 px-2 py-0.5 rounded text-[10px] font-bold">
-                          ⚡ EXPRESS
+                          {t('expressPriority')}
                         </span>
                       )}
                       {veh.priority === 'vip' && (
                         <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded text-[10px] font-bold">
-                          ⭐ VIP
+                          {t('vipPriority')}
                         </span>
                       )}
 
                       {/* Status Badge */}
                       {veh.status === 'incoming' && (
                         <span className="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase">
-                          Intake
+                          Masuk
                         </span>
                       )}
                       {veh.status === 'in_progress' && (
                         <span className="bg-orange-500/20 text-orange-400 border border-orange-500/40 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase flex items-center gap-1">
-                          <Wrench className="w-3 h-3 animate-spin" /> Repairing
+                          <Wrench className="w-3 h-3 animate-spin" /> Pembaikan
                         </span>
                       )}
                       {veh.status === 'completed' && (
                         <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> Ready
+                          <CheckCircle2 className="w-3 h-3" /> Siap
                         </span>
                       )}
                       {veh.status === 'delivered' && (
                         <span className="bg-white/10 text-white/50 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase">
-                          Delivered
+                          Diserahkan
                         </span>
                       )}
                     </div>
@@ -296,7 +344,9 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                           {veh.ownerName}
                         </p>
                         {veh.ownerPhone && <p className="text-white/40 text-[10px]">{veh.ownerPhone}</p>}
-                        <p className="text-white/50 font-semibold text-[10px]">Location: {veh.bayNumber || 'Intake Bay'}</p>
+                        <p className="text-white/50 font-semibold text-[10px]">
+                          {t('location')} {veh.bayNumber || 'Bay 01'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -304,10 +354,211 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                   {/* Mechanic Line */}
                   <div className="bg-[#0a0b0e] p-2.5 rounded-lg border border-white/5 mb-4 flex items-center justify-between text-xs font-mono">
                     <span className="text-white/40 font-medium flex items-center gap-1">
-                      <Wrench className="w-3.5 h-3.5 text-cyan-400" /> Technician:
+                      <Wrench className="w-3.5 h-3.5 text-cyan-400" /> {t('technician')}
                     </span>
-                    <span className="font-bold text-white">{veh.mechanicName || 'Unassigned'}</span>
+                    <span className="font-bold text-white">{veh.mechanicName || t('unassigned')}</span>
                   </div>
+
+                  {/* To-Do List & Progress Line Section */}
+                  {(() => {
+                    const tasks = veh.tasks && veh.tasks.length > 0 ? veh.tasks : getDefaultTasksForService(veh.serviceType);
+                    const progress = calculateServiceProgress(tasks, veh.status);
+                    const theme = getProgressColorTheme(progress.percent);
+                    const isExpanded = !!expandedCards[veh.id];
+                    const isAdding = addingTaskId === veh.id;
+                    const visibleTasks = isExpanded ? tasks : tasks.slice(0, 3);
+                    const hasMore = tasks.length > 3;
+
+                    return (
+                      <div className="bg-[#121417] p-3 rounded-xl border border-white/10 mb-4 space-y-2.5 font-mono">
+                        {/* Header: Title + Progress Percentage Badge */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white">
+                            <ListChecks className="w-4 h-4 text-cyan-400" />
+                            <span>Senarai Tugasan (To-Do)</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="px-2.5 py-0.5 rounded-full text-[11px] font-black flex items-center gap-1 transition-all duration-300"
+                              style={{
+                                background: theme.accentLight,
+                                color: theme.accentColor,
+                                border: `1px solid ${theme.accentBorder}`,
+                                boxShadow: `0 0 10px hsla(${theme.hue}, 95%, 50%, 0.2)`
+                              }}
+                            >
+                              {progress.isAllCompleted ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                  <span>100% SIAP</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>SIAP {progress.percent}%</span>
+                                  <span className="opacity-70 font-medium text-[10px]">({progress.completedCount}/{progress.totalCount})</span>
+                                </>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Progress Line (Animated Bar) */}
+                        <div className="space-y-1">
+                          <div className="w-full bg-[#0a0c0e] h-2.5 rounded-full overflow-hidden border border-white/10 p-0.5 relative">
+                            <div
+                              className="h-full rounded-full transition-all duration-500 ease-out"
+                              style={{
+                                width: `${Math.max(progress.percent, 3)}%`,
+                                background: theme.progressBarGradient,
+                                boxShadow: theme.progressBarGlow,
+                              }}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-white/50">
+                            <span className="truncate max-w-[200px]">
+                              {progress.isAllCompleted
+                                ? '✨ Semua kerja telah disiapkan'
+                                : progress.activeTaskTitle
+                                ? `Sedang: ${progress.activeTaskTitle}`
+                                : 'Menunggu giliran mula kerja'}
+                            </span>
+                            <span className="font-bold shrink-0 ml-1" style={{ color: theme.accentColor }}>
+                              {progress.completedCount}/{progress.totalCount} Siap ({progress.percent}%)
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Checklist Tasks */}
+                        <div className="space-y-1.5 pt-1">
+                          {visibleTasks.map((task) => (
+                            <div
+                              key={task.id}
+                              onClick={(e) => handleToggleTask(veh, task.id, e)}
+                              className={`flex items-start gap-2 p-2 rounded-lg cursor-pointer transition-all border select-none ${
+                                task.completed
+                                  ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-200'
+                                  : 'bg-[#1e2023] hover:bg-[#25282c] border-white/5 text-white/90 hover:border-white/20'
+                              }`}
+                            >
+                              <div
+                                className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center transition-colors shrink-0 ${
+                                  task.completed
+                                    ? 'bg-emerald-500 text-black shadow-sm'
+                                    : 'border border-white/30 hover:border-cyan-400 bg-black/40'
+                                }`}
+                              >
+                                {task.completed && <Check className="w-3 h-3 stroke-[3]" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p
+                                  className={`text-xs leading-snug ${
+                                    task.completed ? 'line-through text-emerald-300/70' : 'text-white/90 font-medium'
+                                  }`}
+                                >
+                                  {task.title}
+                                </p>
+                                {task.completed && task.completedAt && (
+                                  <span className="text-[9px] text-emerald-400/60 block mt-0.5">
+                                    ✓ Siap {new Date(task.completedAt).toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Expand / Collapse & Add Task Controls */}
+                        <div className="flex items-center justify-between pt-1 text-xs">
+                          {hasMore ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleExpandCardTasks(veh.id);
+                              }}
+                              className="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1 py-1"
+                            >
+                              {isExpanded ? (
+                                <>
+                                  <ChevronUp className="w-3.5 h-3.5" /> Ringkaskan ({tasks.length} tugasan)
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="w-3.5 h-3.5" /> Lihat {tasks.length - 3} tugasan lagi...
+                                </>
+                              )}
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-white/30">{tasks.length} tugasan berdaftar</span>
+                          )}
+
+                          {!isAdding ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAddingTaskId(veh.id);
+                                setNewTaskTitle('');
+                              }}
+                              className="text-[11px] text-white/70 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded border border-white/10 flex items-center gap-1 transition-colors"
+                            >
+                              <Plus className="w-3 h-3 text-cyan-400" /> Tambah Kerja
+                            </button>
+                          ) : null}
+                        </div>
+
+                        {/* Inline Add Task Form */}
+                        {isAdding && (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-[#181a1d] p-2 rounded-lg border border-cyan-500/30 space-y-2 mt-2"
+                          >
+                            <input
+                              type="text"
+                              value={newTaskTitle}
+                              onChange={(e) => setNewTaskTitle(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleAddNewTask(veh);
+                                }
+                              }}
+                              placeholder="Contoh: Skim disc rotor brek belakang..."
+                              className="w-full bg-black/50 border border-white/20 rounded px-2.5 py-1.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-cyan-400"
+                              autoFocus
+                            />
+                            <div className="flex justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAddingTaskId(null);
+                                  setNewTaskTitle('');
+                                }}
+                                className="px-2 py-1 rounded text-[11px] text-white/50 hover:text-white"
+                              >
+                                Batal
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleAddNewTask(veh)}
+                                className="px-2.5 py-1 rounded text-[11px] bg-cyan-500 hover:bg-cyan-400 text-black font-bold flex items-center gap-1"
+                              >
+                                <Plus className="w-3 h-3" /> Simpan Tugasan
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* All Completed Notice */}
+                        {progress.isAllCompleted && veh.status !== 'completed' && veh.status !== 'delivered' && (
+                          <div className="bg-emerald-950/40 border border-emerald-500/40 p-2 rounded-lg text-center text-xs text-emerald-300 font-semibold flex items-center justify-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-spin" />
+                            <span>Semua tugas selesai! Sedia untuk menekan butang siap di bawah.</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Card Action Stage Buttons */}
@@ -319,7 +570,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                         onClick={() => onUpdateStatus(veh.id, 'in_progress')}
                         className="col-span-2 py-2 px-3 rounded-xl bg-orange-500 hover:bg-orange-400 text-black font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md transition-all"
                       >
-                        <Play className="w-3.5 h-3.5" /> Start Repair Work
+                        <Play className="w-3.5 h-3.5" /> {t('startRepairWork')}
                       </button>
                     )}
 
@@ -328,7 +579,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                         onClick={() => onUpdateStatus(veh.id, 'completed')}
                         className="col-span-2 py-2 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all"
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Mark Service Completed
+                        <CheckCircle2 className="w-3.5 h-3.5" /> {t('markServiceCompleted')}
                       </button>
                     )}
 
@@ -337,7 +588,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                         onClick={() => onUpdateStatus(veh.id, 'delivered')}
                         className="col-span-2 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase flex items-center justify-center gap-1.5"
                       >
-                        <Check className="w-3.5 h-3.5" /> Mark Delivered & Handover
+                        <Check className="w-3.5 h-3.5" /> {t('markDeliveredHandover')}
                       </button>
                     )}
 
@@ -346,7 +597,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                         onClick={() => onUpdateStatus(veh.id, 'incoming')}
                         className="col-span-2 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white/60 font-bold text-xs uppercase flex items-center justify-center gap-1.5"
                       >
-                        Re-open Intake
+                        {t('reopenIntake')}
                       </button>
                     )}
 
@@ -355,7 +606,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                       onClick={() => setSelectedVehicleForDetail(veh)}
                       className="py-1.5 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 font-medium text-xs flex items-center justify-center gap-1 col-span-2 border border-white/10"
                     >
-                      <Eye className="w-3.5 h-3.5 text-cyan-400" /> Edit / Job Sheet
+                      <Eye className="w-3.5 h-3.5 text-cyan-400" /> {t('editJobSheet')}
                     </button>
                   </div>
                 </div>

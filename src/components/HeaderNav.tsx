@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { ViewMode } from '../types';
-import { Tv, Smartphone, Settings, Volume2, VolumeX, RefreshCw, Radio, ExternalLink, ShieldCheck } from 'lucide-react';
+import { Tv, Smartphone, Settings, Volume2, VolumeX, RefreshCw, ExternalLink } from 'lucide-react';
 import { audioNotifier } from '../lib/audioNotifier';
+import { t } from '../lib/i18n';
+import { QESFordLogo } from './QESFordLogo';
 
 interface HeaderNavProps {
   currentView: ViewMode;
@@ -11,16 +13,15 @@ interface HeaderNavProps {
   inProgressCount: number;
   completedCount: number;
   onResetData: () => void;
+  isLargeScreen?: boolean;
 }
 
 export const HeaderNav: React.FC<HeaderNavProps> = ({
   currentView,
   onViewChange,
   connected,
-  incomingCount,
-  inProgressCount,
-  completedCount,
   onResetData,
+  isLargeScreen,
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
@@ -31,10 +32,10 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
     const updateTime = () => {
       const d = new Date();
       setCurrentTime(
-        d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+        d.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
       );
       setCurrentDate(
-        d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()
+        d.toLocaleDateString('ms-MY', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()
       );
     };
     updateTime();
@@ -55,84 +56,63 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   };
 
   return (
-    <header className="bg-[#0a0b0e] border-b border-white/10 text-slate-100 sticky top-0 z-40 shadow-2xl backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-        {/* Left Brand Identifier (Immersive UI Style) */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 font-mono font-black text-lg">
-            PA
-          </div>
-          <div>
-            <span className="text-[#3b82f6] font-mono text-[11px] tracking-widest uppercase block leading-none mb-1">
-              SYSTEM ONLINE // LIVE DASHBOARD
-            </span>
-            <h1 className="font-black text-xl text-white uppercase tracking-tighter leading-none flex items-center gap-2">
-              PRECISION <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400">AUTO-WORKSHOP</span>
-            </h1>
-          </div>
-        </div>
+    <header className="bg-[#282a2c] border-b border-white/10 text-slate-100 sticky top-0 z-40 shadow-2xl backdrop-blur-md">
+      <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+        {/* Left Brand Identifier (QES Ford Autoparts) */}
+        <QESFordLogo size="md" />
 
-        {/* Center Navigation Channel Tabs */}
-        <div className="flex items-center bg-white/5 p-1 rounded-xl border border-white/10 shadow-inner">
-          <button
-            onClick={() => onViewChange('tv')}
-            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold font-mono tracking-wide uppercase transition-all duration-200 ${
-              currentView === 'tv'
-                ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/25'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-            title="TV Monitor View (Live Dashboard)"
-          >
-            <Tv className="w-4 h-4" />
-            <span className="hidden md:inline">TV View</span>
-            <span className="md:hidden">TV</span>
-          </button>
+        {/* Center Auto-Detect Mode Badge & Settings Switch */}
+        <div className="flex items-center gap-2">
+          {currentView === 'settings' ? (
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-500/20 border border-blue-500/40 text-blue-300 font-mono text-xs font-bold uppercase shadow-sm">
+              <Settings className="w-4 h-4 animate-spin-slow" />
+              <span>{t('setupTicker')}</span>
+            </div>
+          ) : currentView === 'tv' ? (
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-mono text-xs font-bold uppercase shadow-sm" title="Paparan TV (Dikesan Automatik mengikut Saiz Skrin Besar)">
+              <Tv className="w-4 h-4 text-cyan-400" />
+              <span className="hidden sm:inline">{t('tvView')}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 font-semibold ml-1">AUTO</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono text-xs font-bold uppercase shadow-sm" title="Konsol Mobil Operator (Dikesan Automatik mengikut Saiz Skrin Mobil)">
+              <Smartphone className="w-4 h-4 text-amber-400" />
+              <span className="hidden sm:inline">{t('operatorControl')}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200 border border-amber-400/30 font-semibold ml-1">AUTO</span>
+            </div>
+          )}
 
-          <button
-            onClick={() => onViewChange('mobile')}
-            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold font-mono tracking-wide uppercase transition-all duration-200 ${
-              currentView === 'mobile'
-                ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/25'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
-            }`}
-            title="Mobile / Staff Operator Console"
-          >
-            <Smartphone className="w-4 h-4" />
-            <span className="hidden md:inline">Operator Control</span>
-            <span className="md:hidden">Mobile</span>
-          </button>
-
+          {/* Settings / Tetapan Toggle Button */}
           <button
             onClick={() => onViewChange('settings')}
-            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold font-mono tracking-wide uppercase transition-all duration-200 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold font-mono tracking-wide uppercase transition-all duration-200 border ${
               currentView === 'settings'
-                ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/25'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
+                ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white border-cyan-400/50 shadow-lg'
+                : 'bg-white/5 text-white/70 border-white/10 hover:text-white hover:bg-white/10'
             }`}
-            title="Workshop Announcements & Settings"
+            title="Sediakan Pengumuman Ticker / Tetapan Bengkel"
           >
             <Settings className="w-4 h-4" />
-            <span className="hidden md:inline">Setup & Ticker</span>
-            <span className="md:hidden">Settings</span>
+            <span className="hidden md:inline">{currentView === 'settings' ? 'Tutup Tetapan' : 'Tetapan'}</span>
           </button>
         </div>
 
-        {/* Right Status & Clock Controls (Immersive UI Style) */}
+        {/* Right Status & Clock Controls */}
         <div className="flex items-center gap-4">
           {/* Live Sync Badge */}
           <div className="hidden lg:flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 text-xs font-mono">
             <span className={`w-2 h-2 rounded-full ${connected ? 'bg-cyan-400 animate-pulse' : 'bg-red-500'}`}></span>
-            <span className="text-white/80">{connected ? 'ONLINE' : 'OFFLINE'}</span>
+            <span className="text-white/80">{connected ? t('online') : t('offline')}</span>
           </div>
 
           {/* Clock Display */}
           <div className="hidden md:flex gap-6 text-right">
             <div className="flex flex-col">
-              <span className="text-[10px] uppercase opacity-40 font-mono tracking-wider">Current Time</span>
+              <span className="text-[10px] uppercase opacity-40 font-mono tracking-wider">{t('currentTime')}</span>
               <span className="text-xl font-light font-mono text-cyan-400">{currentTime}</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] uppercase opacity-40 font-mono tracking-wider">Date</span>
+              <span className="text-[10px] uppercase opacity-40 font-mono tracking-wider">{t('date')}</span>
               <span className="text-xl font-light font-mono text-white/90">{currentDate}</span>
             </div>
           </div>
@@ -145,7 +125,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 ? 'bg-red-950/40 text-red-400 border-red-500/30 hover:bg-red-900/50'
                 : 'bg-white/5 text-cyan-400 border-white/10 hover:bg-white/10'
             }`}
-            title={isMuted ? 'Audio Muted' : 'Audio Active'}
+            title={isMuted ? 'Audio Dinyahaktifkan' : 'Audio Aktif'}
           >
             {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
@@ -154,7 +134,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           <button
             onClick={handleOpenStandaloneTv}
             className="p-2.5 rounded-xl bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white transition-all hidden sm:flex"
-            title="Open Standalone TV View"
+            title="Buka Paparan TV dalam Tetingkap Baharu"
           >
             <ExternalLink className="w-4 h-4" />
           </button>
@@ -169,20 +149,20 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 }}
                 className="px-2.5 py-1 rounded-lg text-xs bg-red-600 text-white font-bold hover:bg-red-500 shadow-md"
               >
-                Reset
+                {t('reset')}
               </button>
               <button
                 onClick={() => setConfirmReset(false)}
                 className="px-2.5 py-1 rounded-lg text-xs bg-white/10 text-white/70 hover:bg-white/20"
               >
-                Cancel
+                {t('cancel')}
               </button>
             </div>
           ) : (
             <button
               onClick={() => setConfirmReset(true)}
               className="p-2.5 rounded-xl bg-white/5 text-white/40 border border-white/10 hover:text-red-400 hover:border-red-500/30 transition-all hidden md:flex"
-              title="Reset Sample Data"
+              title="Set Semula Data Sampel"
             >
               <RefreshCw className="w-4 h-4" />
             </button>

@@ -3,6 +3,7 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { INITIAL_VEHICLES, INITIAL_MECHANICS, INITIAL_ANNOUNCEMENTS } from './src/data/presetData';
 import { VehicleRecord, Mechanic, Announcement, ActivityLog } from './src/types';
+import { getDefaultTasksForService } from './src/utils/serviceTasks';
 
 const app = express();
 const PORT = 3000;
@@ -128,6 +129,9 @@ app.post('/api/vehicles', (req: Request, res: Response) => {
     vehicleMake: vehicleMake.trim(),
     vehicleModel: vehicleModel ? vehicleModel.trim() : vehicleMake.trim(),
     serviceType: serviceType || 'General Inspection',
+    tasks: req.body.tasks && Array.isArray(req.body.tasks) && req.body.tasks.length > 0
+      ? req.body.tasks
+      : getDefaultTasksForService(serviceType || 'General Inspection'),
     status: 'incoming',
     mechanicId,
     mechanicName: assignedMechanicName,
@@ -182,6 +186,13 @@ app.patch('/api/vehicles/:id', (req: Request, res: Response) => {
     if (updates.status === 'completed' && !currentVehicle.completionTime) {
       updates.completionTime = nowIso;
       statusChangedToCompleted = true;
+      if (currentVehicle.tasks) {
+        updates.tasks = currentVehicle.tasks.map((t) => ({
+          ...t,
+          completed: true,
+          completedAt: t.completedAt || nowIso,
+        }));
+      }
     }
   }
 
@@ -294,6 +305,35 @@ app.post('/api/announcements', (req: Request, res: Response) => {
   announcementsStore.unshift(newAnn);
   broadcastToClients('ANNOUNCEMENTS_UPDATED', { announcements: announcementsStore });
   res.status(201).json({ announcement: newAnn });
+});
+
+// DELETE /api/announcements/:id
+app.delete('/api/announcements/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  announcementsStore = announcementsStore.filter((a) => a.id !== id);
+  broadcastToClients('ANNOUNCEMENTS_UPDATED', { announcements: announcementsStore });
+  res.json({ success: true, announcementId: id });
+});
+
+// PUT /api/announcements/:id
+app.put('/api/announcements/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { text, type, active } = req.body;
+  const index = announcementsStore.findIndex((a) => a.id === id);
+  if (index === -1) {
+    res.status(404).json({ error: 'Announcement not found.' });
+    return;
+  }
+  const current = announcementsStore[index];
+  const updated: Announcement = {
+    ...current,
+    text: typeof text === 'string' && text.trim() ? text.trim().toUpperCase() : current.text,
+    type: type || current.type,
+    active: typeof active === 'boolean' ? active : current.active,
+  };
+  announcementsStore[index] = updated;
+  broadcastToClients('ANNOUNCEMENTS_UPDATED', { announcements: announcementsStore });
+  res.json({ announcement: updated });
 });
 
 // POST /api/reset (Reset Demo Data)

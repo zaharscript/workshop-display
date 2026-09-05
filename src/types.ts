@@ -2,6 +2,13 @@ export type VehicleStatus = 'incoming' | 'in_progress' | 'completed' | 'delivere
 
 export type PriorityLevel = 'normal' | 'express' | 'vip';
 
+export interface ServiceTask {
+  id: string;
+  title: string;
+  completed: boolean;
+  completedAt?: string; // ISO string
+}
+
 export interface VehicleRecord {
   id: string;
   ownerName: string;
@@ -10,6 +17,7 @@ export interface VehicleRecord {
   vehicleMake: string;
   vehicleModel: string;
   serviceType: string;
+  tasks?: ServiceTask[];
   status: VehicleStatus;
   mechanicId?: string;
   mechanicName?: string;

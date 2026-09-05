@@ -1,8 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { VehicleRecord, Mechanic, PriorityLevel } from '../types';
 import { SERVICE_CATEGORIES, PRESET_VEHICLE_IMAGES } from '../data/presetData';
-import { X, Car, User, Phone, Wrench, Clock, FileText, Image as ImageIcon, ShieldAlert, Check, Camera, Upload, FlipHorizontal, Trash2, Zap } from 'lucide-react';
-import { compressImageSource, CompressionResult } from '../utils/imageCompressor';
+import {
+  X,
+  Car,
+  User,
+  Phone,
+  ShieldAlert,
+  Camera,
+  Upload,
+  FlipHorizontal,
+  Trash2,
+  Zap,
+  ImageIcon,
+} from 'lucide-react';
+import {
+  compressImage,
+  handleFileUpload,
+  compressImageSource,
+  CompressionResult,
+} from '../utils/imageCompressor';
+import { getDefaultTasksForService } from '../utils/serviceTasks';
+import { t } from '../lib/i18n';
 
 interface NewVehicleModalProps {
   isOpen: boolean;
@@ -11,7 +30,12 @@ interface NewVehicleModalProps {
   mechanics: Mechanic[];
 }
 
-export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClose, onSubmit, mechanics }) => {
+export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  mechanics,
+}) => {
   const [ownerName, setOwnerName] = useState('');
   const [ownerPhone, setOwnerPhone] = useState('');
   const [plateNumber, setPlateNumber] = useState('');
@@ -23,8 +47,6 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
   const [estimatedDurationMinutes, setEstimatedDurationMinutes] = useState('45');
   const [priority, setPriority] = useState<PriorityLevel>('normal');
   const [notes, setNotes] = useState('');
-  const [selectedPhotoUrl, setSelectedPhotoUrl] = useState(PRESET_VEHICLE_IMAGES[0].url);
-  const [customPhotoUrl, setCustomPhotoUrl] = useState('');
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [compressionInfo, setCompressionInfo] = useState<CompressionResult | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
@@ -36,8 +58,9 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Stop camera when component unmounts or modal closes
+  // Stop camera stream when component unmounts or modal closes
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -47,10 +70,21 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
   };
 
   useEffect(() => {
+    if (isOpen) {
+      // Ensure scroll container starts at the very top
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      stopCamera();
+    }
     return () => {
+      document.body.style.overflow = '';
       stopCamera();
     };
-  }, []);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -72,7 +106,7 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
       }
     } catch (err) {
       console.error('Camera access error:', err);
-      setErrorMsg('Could not access device camera. Please check camera permissions or use file upload.');
+      setErrorMsg('Tidak dapat mengakses kamera peranti. Sila semak kebenaran kamera atau muat naik fail foto.');
       setIsCameraActive(false);
     }
   };
@@ -94,16 +128,13 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const rawDataUrl = canvas.toDataURL('image/jpeg', 0.90);
       try {
-        // Compress photo to WebP/JPEG format (800x600 max, 70% quality)
-        const compressed = await compressImageSource(rawDataUrl, 800, 600, 0.70);
+        // Compress photo to JPEG format (1200px max, 0.70 quality) for storage optimization
+        const compressed = await compressImageSource(rawDataUrl, 1200, 900, 0.70);
         setCapturedPhoto(compressed.dataUrl);
-        setSelectedPhotoUrl(compressed.dataUrl);
         setCompressionInfo(compressed);
-        setCustomPhotoUrl('');
       } catch (err) {
         console.error('Compression failed, using uncompressed fallback:', err);
         setCapturedPhoto(rawDataUrl);
-        setSelectedPhotoUrl(rawDataUrl);
       } finally {
         setIsCompressing(false);
         stopCamera();
@@ -118,20 +149,29 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
     if (file) {
       setIsCompressing(true);
       try {
-        // Compress file to WebP/JPEG format (800x600 max, 70% quality)
-        const compressed = await compressImageSource(file, 800, 600, 0.70);
-        setCapturedPhoto(compressed.dataUrl);
-        setSelectedPhotoUrl(compressed.dataUrl);
-        setCompressionInfo(compressed);
-        setCustomPhotoUrl('');
+        // Compress image using HTML Canvas (max 1200px, 0.7 quality) and upload/process
+        const uploadResult = await handleFileUpload(e, 'vehicle_photos', 1200, 0.7);
+        if (uploadResult) {
+          setCapturedPhoto(uploadResult.downloadURL);
+          const originalKB = Math.round(uploadResult.originalSizeMB * 1024);
+          const compressedKB = Math.round(uploadResult.compressedSizeMB * 1024);
+          setCompressionInfo({
+            dataUrl: uploadResult.downloadURL,
+            blob: uploadResult.compressedBlob,
+            originalSizeKB: originalKB,
+            compressedSizeKB: compressedKB,
+            savingsPercent: uploadResult.savingsPercent,
+            format: 'jpeg',
+            width: 1200,
+            height: 900,
+          });
+        }
       } catch (err) {
-        console.error('File compression failed, using standard reader:', err);
+        console.error('File compression/upload failed, using standard reader:', err);
         const reader = new FileReader();
         reader.onload = (event) => {
           const result = event.target?.result as string;
           setCapturedPhoto(result);
-          setSelectedPhotoUrl(result);
-          setCustomPhotoUrl('');
         };
         reader.readAsDataURL(file);
       } finally {
@@ -148,7 +188,7 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ownerName.trim() || !plateNumber.trim()) {
-      setErrorMsg('Owner Name and Car Plate Number are required.');
+      setErrorMsg(t('ownerNameAndPlateRequired'));
       return;
     }
 
@@ -156,7 +196,7 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
     setErrorMsg('');
 
     try {
-      const photoToUse = customPhotoUrl.trim() ? customPhotoUrl.trim() : selectedPhotoUrl;
+      const photoToUse = capturedPhoto || PRESET_VEHICLE_IMAGES[0].url;
       await onSubmit({
         ownerName: ownerName.trim(),
         ownerPhone: ownerPhone.trim(),
@@ -164,6 +204,7 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
         vehicleMake: vehicleMake.trim(),
         vehicleModel: vehicleModel.trim() || vehicleMake.trim(),
         serviceType,
+        tasks: getDefaultTasksForService(serviceType),
         mechanicId: mechanicId || undefined,
         bayNumber: bayNumber.trim(),
         estimatedDurationMinutes: Number(estimatedDurationMinutes) || 45,
@@ -171,35 +212,45 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
         notes: notes.trim(),
         photoUrl: photoToUse,
       });
+
       // Reset & close
       stopCamera();
       onClose();
     } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : 'Failed to register vehicle.');
+      setErrorMsg(err instanceof Error ? err.message : 'Gagal mendaftarkan kenderaan.');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-y-auto">
-      <div className="bg-[#15171e] border border-white/10 rounded-xl w-full max-w-2xl overflow-hidden shadow-2xl my-8">
-        {/* Header (Immersive UI Style) */}
-        <div className="bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 px-6 py-4 flex items-center justify-between text-white font-mono">
-          <div className="flex items-center gap-2">
-            <Car className="w-6 h-6 font-bold" />
-            <h3 className="text-base font-black tracking-wider uppercase">REGISTER NEW INCOMING VEHICLE</h3>
+    <div
+      ref={scrollContainerRef}
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md p-2 sm:p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleCloseModal();
+      }}
+    >
+      <div className="min-h-full flex items-start justify-center py-2 sm:py-6">
+        <div className="bg-[#282a2c] border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl my-auto">
+          {/* Header (Immersive UI Style) */}
+          <div className="sticky top-0 z-20 bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between text-white font-mono shadow-md">
+            <div className="flex items-center gap-2">
+              <Car className="w-5 h-5 sm:w-6 sm:h-6 font-bold" />
+              <h3 className="text-sm sm:text-base font-black tracking-wider uppercase">{t('registerNewVehicle')}</h3>
+            </div>
+            <button
+              type="button"
+              onClick={handleCloseModal}
+              className="p-1.5 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-all"
+              aria-label="Tutup"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={handleCloseModal}
-            className="p-1 rounded-lg bg-black/20 hover:bg-black/40 text-white transition-all"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 text-[#e0e0e0] font-sans">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5 text-[#e0e0e0] font-sans">
           {errorMsg && (
             <div className="bg-red-950/80 border border-red-500/50 p-3 rounded-xl text-red-200 text-xs flex items-center gap-2 font-mono">
               <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
@@ -211,33 +262,33 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-mono font-bold text-white/70 uppercase tracking-wider mb-1">
-                Owner Name <span className="text-cyan-400">*</span>
+                {t('ownerName')} <span className="text-cyan-400">*</span>
               </label>
               <div className="relative">
                 <User className="w-4 h-4 absolute left-3 top-3 text-white/40" />
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Ahmad Razak"
+                  placeholder="cth. Ahmad Razak"
                   value={ownerName}
                   onChange={(e) => setOwnerName(e.target.value)}
-                  className="w-full bg-[#161922] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
+                  className="w-full bg-[#242628] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
                 />
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-mono font-bold text-white/70 uppercase tracking-wider mb-1">
-                Phone Number
+                {t('phoneNumber')}
               </label>
               <div className="relative">
                 <Phone className="w-4 h-4 absolute left-3 top-3 text-white/40" />
                 <input
                   type="text"
-                  placeholder="e.g. +60 12-345 6789"
+                  placeholder="cth. +60 12-345 6789"
                   value={ownerPhone}
                   onChange={(e) => setOwnerPhone(e.target.value)}
-                  className="w-full bg-[#161922] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
+                  className="w-full bg-[#242628] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
                 />
               </div>
             </div>
@@ -247,26 +298,26 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-mono font-bold text-white/70 uppercase tracking-wider mb-1">
-                Car Plate Number <span className="text-cyan-400">*</span>
+                {t('carPlateNumber')} <span className="text-cyan-400">*</span>
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. WYY 8829"
+                placeholder="cth. WYY 8829"
                 value={plateNumber}
                 onChange={(e) => setPlateNumber(e.target.value)}
-                className="w-full bg-[#161922] border border-cyan-500/50 uppercase font-mono font-black text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 tracking-wider"
+                className="w-full bg-[#242628] border border-cyan-500/50 uppercase font-mono font-black text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 tracking-wider"
               />
             </div>
 
             <div>
               <label className="block text-xs font-mono font-bold text-white/70 uppercase tracking-wider mb-1">
-                Make / Brand
+                {t('makeBrand')}
               </label>
               <select
                 value={vehicleMake}
                 onChange={(e) => setVehicleMake(e.target.value)}
-                className="w-full bg-[#161922] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
+                className="w-full bg-[#242628] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
               >
                 <option value="Proton">Proton</option>
                 <option value="Perodua">Perodua</option>
@@ -277,20 +328,20 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
                 <option value="Nissan">Nissan</option>
                 <option value="Mazda">Mazda</option>
                 <option value="Ford">Ford</option>
-                <option value="Other">Other Make</option>
+                <option value="Lain-lain">Jenama Lain</option>
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-mono font-bold text-white/70 uppercase tracking-wider mb-1">
-                Model Name
+                {t('modelName')}
               </label>
               <input
                 type="text"
-                placeholder="e.g. X70 Executive"
+                placeholder="cth. X70 Executive"
                 value={vehicleModel}
                 onChange={(e) => setVehicleModel(e.target.value)}
-                className="w-full bg-[#161922] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
+                className="w-full bg-[#242628] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
               />
             </div>
           </div>
@@ -299,12 +350,12 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono">
             <div>
               <label className="block text-xs font-bold text-white/70 uppercase tracking-wider mb-1">
-                Service Category
+                {t('serviceCategory')}
               </label>
               <select
                 value={serviceType}
                 onChange={(e) => setServiceType(e.target.value)}
-                className="w-full bg-[#161922] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+                className="w-full bg-[#242628] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
               >
                 {SERVICE_CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -316,16 +367,16 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
 
             <div>
               <label className="block text-xs font-bold text-white/70 uppercase tracking-wider mb-1">
-                Priority Level
+                {t('priorityLevel')}
               </label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as PriorityLevel)}
-                className="w-full bg-[#161922] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+                className="w-full bg-[#242628] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
               >
-                <option value="normal">Normal Priority</option>
-                <option value="express">⚡ Express Service</option>
-                <option value="vip">⭐ VIP Customer</option>
+                <option value="normal">{t('normalPriority')}</option>
+                <option value="express">{t('expressService')}</option>
+                <option value="vip">{t('vipCustomer')}</option>
               </select>
             </div>
           </div>
@@ -334,17 +385,17 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
             <div>
               <label className="block text-xs font-bold text-white/70 uppercase tracking-wider mb-1">
-                Assign Technician
+                {t('assignTechnician')}
               </label>
               <select
                 value={mechanicId}
                 onChange={(e) => setMechanicId(e.target.value)}
-                className="w-full bg-[#161922] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+                className="w-full bg-[#242628] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
               >
-                <option value="">Unassigned (Queue Pool)</option>
+                <option value="">{t('unassignedQueuePool')}</option>
                 {mechanics.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.name} ({m.activeJobsCount} active jobs)
+                    {m.name} ({m.activeJobsCount} tugasan aktif)
                   </option>
                 ))}
               </select>
@@ -352,20 +403,20 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
 
             <div>
               <label className="block text-xs font-bold text-white/70 uppercase tracking-wider mb-1">
-                Assigned Bay / Lift
+                {t('assignedBayLift')}
               </label>
               <input
                 type="text"
-                placeholder="e.g. Bay 01"
+                placeholder="cth. Bay 01"
                 value={bayNumber}
                 onChange={(e) => setBayNumber(e.target.value)}
-                className="w-full bg-[#161922] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+                className="w-full bg-[#242628] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
               />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-white/70 uppercase tracking-wider mb-1">
-                Est. Duration (mins)
+                {t('estDurationMinutes')}
               </label>
               <input
                 type="number"
@@ -373,20 +424,20 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
                 max="300"
                 value={estimatedDurationMinutes}
                 onChange={(e) => setEstimatedDurationMinutes(e.target.value)}
-                className="w-full bg-[#161922] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+                className="w-full bg-[#242628] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
               />
             </div>
           </div>
 
-          {/* Vehicle Photo Selection */}
-          <div className="font-mono space-y-3">
-            <label className="block text-xs font-bold text-white/70 uppercase tracking-wider flex items-center justify-between">
-              <span className="flex items-center gap-1">
+          {/* Vehicle Photo Selection: PHONE CAMERA ONLY */}
+          <div className="font-mono space-y-3 bg-[#212325] p-4 rounded-xl border border-white/10">
+            <label className="block text-xs font-bold text-white/80 uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
                 <ImageIcon className="w-4 h-4 text-cyan-400" />
-                Vehicle Photo Selection
+                {t('vehiclePhotoSelection')}
               </span>
               <span className="text-[10px] text-cyan-400 font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
-                Live Phone Camera Supported
+                {t('livePhoneCameraSupported')}
               </span>
             </label>
 
@@ -401,41 +452,41 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
             />
 
             {/* Camera Action Buttons Bar */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <button
                 type="button"
                 onClick={() => startCamera('environment')}
-                className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all"
+                className="py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all"
               >
                 <Camera className="w-4 h-4" />
-                <span>Open Phone Camera</span>
+                <span>{t('openPhoneCamera')}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/10 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+                className="py-3 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/10 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
               >
                 <Upload className="w-4 h-4 text-cyan-400" />
-                <span>Snap / Upload Photo</span>
+                <span>{t('snapUploadPhoto')}</span>
               </button>
             </div>
 
-            {/* Live Camera Viewfinder Modal/Box */}
+            {/* Live Camera Viewfinder Stream */}
             {isCameraActive && (
-              <div className="bg-black/90 border-2 border-cyan-500/80 rounded-xl p-3 relative overflow-hidden space-y-3 shadow-2xl animate-fade-in">
+              <div className="bg-black/90 border-2 border-cyan-500/80 rounded-xl p-3 relative overflow-hidden space-y-3 shadow-2xl animate-fade-in mt-2">
                 <div className="flex items-center justify-between text-xs text-cyan-400 font-bold pb-1 border-b border-white/10">
                   <span className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
-                    LIVE CAMERA STREAM ({facingMode === 'environment' ? 'Rear' : 'Front'})
+                    {t('liveCameraStream')} ({facingMode === 'environment' ? 'Belakang' : 'Hadapan'})
                   </span>
                   <button
                     type="button"
                     onClick={switchCamera}
                     className="flex items-center gap-1 text-[11px] bg-white/10 hover:bg-white/20 text-white px-2 py-1 rounded"
-                    title="Switch Camera"
+                    title="Tukar Kamera"
                   >
-                    <FlipHorizontal className="w-3.5 h-3.5 text-cyan-400" /> Switch
+                    <FlipHorizontal className="w-3.5 h-3.5 text-cyan-400" /> {t('switchCamera')}
                   </button>
                 </div>
 
@@ -456,54 +507,55 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
                     onClick={stopCamera}
                     className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 text-xs font-semibold"
                   >
-                    Cancel Camera
+                    {t('cancelCamera')}
                   </button>
                   <button
                     type="button"
                     onClick={takeSnap}
                     className="flex-1 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg"
                   >
-                    <Camera className="w-4 h-4" /> Snap Photo Now
+                    <Camera className="w-4 h-4" /> {t('snapPhotoNow')}
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Captured Camera Photo Preview Display */}
+            {/* Compression Loader indicator */}
             {isCompressing && (
-              <div className="bg-[#10141d] border border-cyan-500/40 rounded-xl p-3 flex items-center gap-3 text-cyan-400 text-xs font-mono animate-pulse">
+              <div className="bg-[#15171e] border border-cyan-500/40 rounded-xl p-3 flex items-center gap-3 text-cyan-400 text-xs font-mono animate-pulse">
                 <Zap className="w-4 h-4 animate-bounce text-amber-400" />
-                <span>Compressing photo to WebP/JPEG to save DB bandwidth...</span>
+                <span>{t('compressingPhotoText')}</span>
               </div>
             )}
 
+            {/* Captured Camera Photo Preview Display */}
             {capturedPhoto && !isCameraActive && !isCompressing && (
-              <div className="bg-[#10141d] border border-cyan-500/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+              <div className="bg-[#15171e] border border-cyan-500/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md mt-2">
                 <div className="flex items-center gap-3">
                   <img
                     src={capturedPhoto}
-                    alt="Captured vehicle snap"
+                    alt="Foto kenderaan ditangkap"
                     className="w-16 h-12 object-cover rounded-lg border-2 border-cyan-400 shrink-0"
                   />
                   <div>
                     <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
                       <span className="text-[10px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded uppercase">
-                        📷 Phone Photo Selected
+                        {t('phonePhotoSelected')}
                       </span>
                       {compressionInfo && (
                         <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded uppercase flex items-center gap-1">
                           <Zap className="w-3 h-3 text-emerald-300" />
-                          {compressionInfo.format.toUpperCase()} Compressed ({compressionInfo.compressedSizeKB} KB)
+                          {compressionInfo.format.toUpperCase()} ({compressionInfo.compressedSizeKB} KB)
                         </span>
                       )}
                     </div>
                     <p className="text-[11px] text-white/80 font-semibold">
                       {compressionInfo ? (
                         <span className="text-emerald-300">
-                          Reduced by ~{compressionInfo.savingsPercent}% (Saved DB Storage & Bandwidth)
+                          Dijimatkan ~{compressionInfo.savingsPercent}% (Mampatan JPEG Canvas 1200px // Jimat Kos Storan)
                         </span>
                       ) : (
-                        'Active Vehicle Photo Selected'
+                        t('activePhotoSelected')
                       )}
                     </p>
                   </div>
@@ -513,68 +565,23 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
                   onClick={() => {
                     setCapturedPhoto(null);
                     setCompressionInfo(null);
-                    setSelectedPhotoUrl(PRESET_VEHICLE_IMAGES[0].url);
                   }}
                   className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 transition-all text-xs flex items-center justify-center gap-1 shrink-0"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Remove
+                  <Trash2 className="w-3.5 h-3.5" /> {t('remove')}
                 </button>
               </div>
             )}
-
-            {/* Preset Stock Vehicle Images */}
-            <div>
-              <p className="text-[11px] text-white/50 mb-1.5">Or choose from preset vehicles gallery:</p>
-              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                {PRESET_VEHICLE_IMAGES.map((img) => (
-                  <button
-                    key={img.url}
-                    type="button"
-                    onClick={() => {
-                      setSelectedPhotoUrl(img.url);
-                      setCustomPhotoUrl('');
-                      setCapturedPhoto(null);
-                      setCompressionInfo(null);
-                    }}
-                    className={`relative rounded-lg overflow-hidden border-2 h-12 transition-all ${
-                      selectedPhotoUrl === img.url && !customPhotoUrl && !capturedPhoto
-                        ? 'border-cyan-400 ring-2 ring-cyan-400/50 scale-105'
-                        : 'border-white/10 opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
-                    {selectedPhotoUrl === img.url && !customPhotoUrl && !capturedPhoto && (
-                      <span className="absolute inset-0 bg-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold">
-                        <Check className="w-4 h-4 bg-slate-950 rounded-full p-0.5" />
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Custom URL option */}
-            <input
-              type="text"
-              placeholder="Or paste custom image URL (Optional)"
-              value={customPhotoUrl}
-              onChange={(e) => {
-                setCustomPhotoUrl(e.target.value);
-                setCapturedPhoto(null);
-                setCompressionInfo(null);
-              }}
-              className="w-full bg-[#161922] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white/70 focus:outline-none focus:border-cyan-400"
-            />
           </div>
 
           {/* Notes */}
           <div className="font-mono">
             <label className="block text-xs font-bold text-white/70 uppercase tracking-wider mb-1">
-              Initial Service Notes / Customer Complaints
+              {t('initialServiceNotes')}
             </label>
             <textarea
               rows={2}
-              placeholder="e.g. Customer reported noise in front brake assembly."
+              placeholder={t('notesPlaceholder')}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full bg-[#161922] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
@@ -588,18 +595,19 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({ isOpen, onClos
               onClick={handleCloseModal}
               className="px-4 py-2 rounded-xl bg-white/10 text-white/70 font-semibold text-xs hover:bg-white/20 transition-all"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={submitting}
               className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50"
             >
-              {submitting ? 'Registering...' : 'REGISTER VEHICLE'}
+              {submitting ? t('registering') : t('registerVehicleButton')}
             </button>
           </div>
         </form>
       </div>
     </div>
-  );
+  </div>
+);
 };
