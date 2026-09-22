@@ -116,27 +116,23 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
   };
 
   return (
-    <div className="min-h-[calc(100vh-5rem)] bg-[#353839] text-[#e0e0e0] p-4 sm:p-6 pb-24 font-sans">
+    <div className="min-h-[calc(100vh-5.5rem)] p-3 sm:p-6 pb-24 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Top Header & Actions Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#282a2c] p-5 rounded-xl border border-white/10 shadow-2xl">
+        <div className="clay-card p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-[#e5dac7] dark:border-[#2f5547]">
           <div>
-            <span className="text-[#3b82f6] font-mono text-[11px] tracking-widest uppercase block mb-1">
-              {t('operatorConsole')}
+            <span className="text-[#c45c3d] dark:text-[#df785d] font-serif italic text-xs tracking-wider block mb-1">
+              ❧ Bengkel Artisan & Alat Ganti Tulen Ford
             </span>
-            <h2 className="text-xl font-black tracking-tight text-white uppercase flex items-center gap-2">
-              KONSOL <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400">{t('mobileIntakeTitle')}</span>
+            <h2 className="text-xl sm:text-2xl font-serif font-black tracking-tight text-[#1c382f] dark:text-[#f4efe4] flex items-center gap-2">
+              Konsol <span className="text-[#c45c3d] font-normal italic">Pengurusan Bengkel</span>
             </h2>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setShowLogs(!showLogs)}
-              className={`px-3 py-2 rounded-xl text-xs font-mono font-bold border transition-all flex items-center gap-1.5 ${
-                showLogs
-                  ? 'bg-blue-500/20 text-cyan-400 border-blue-500/40'
-                  : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10'
-              }`}
+              className={`clay-btn ${showLogs ? 'clay-btn-primary' : 'clay-btn-neutral'} text-xs font-serif font-semibold gap-1.5`}
             >
               <History className="w-4 h-4" />
               <span>{t('log')} ({activityLogs.length})</span>
@@ -144,9 +140,9 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
 
             <button
               onClick={() => setIsNewModalOpen(true)}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-mono font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-blue-500/20 transition-all transform hover:scale-[1.02]"
+              className="clay-btn clay-btn-primary text-xs tracking-wide font-serif font-bold gap-2 shadow-sm"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 stroke-[2.5]" />
               <span>{t('intakeNewCar')}</span>
             </button>
           </div>
@@ -156,24 +152,24 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Search Box */}
           <div className="relative w-full md:w-80">
-            <Search className="w-4 h-4 absolute left-3.5 top-3 text-white/40" />
+            <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-[#8c7e70]" />
             <input
               type="text"
               placeholder={t('searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#242628] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400 shadow-inner font-mono"
+              className="clay-inset w-full pl-10 pr-4 py-2.5 text-xs text-[#2b3a32] dark:text-[#f2eee4] placeholder:text-[#918376] focus:outline-none focus:ring-1 focus:ring-[#c45c3d] font-serif font-medium"
             />
           </div>
 
-          {/* Status Tabs */}
-          <div className="flex items-center gap-1 bg-[#282a2c] p-1 rounded-xl border border-white/10 overflow-x-auto w-full md:w-auto font-mono">
+          {/* Status Tabs as Botanical Artisan Pills */}
+          <div className="clay-inset p-1.5 flex items-center gap-1.5 overflow-x-auto w-full md:w-auto font-serif text-xs">
             <button
               onClick={() => setActiveTab('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+              className={`px-3.5 py-1.5 rounded-full font-bold transition-all whitespace-nowrap ${
                 activeTab === 'all'
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
-                  : 'text-white/50 hover:text-white hover:bg-white/5'
+                  ? 'clay-btn clay-btn-forest shadow-sm'
+                  : 'text-[#5f5043] dark:text-[#c4d6cc] hover:text-[#1c382f]'
               }`}
             >
               {t('allStatus')} ({counts.all})
@@ -181,10 +177,10 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
 
             <button
               onClick={() => setActiveTab('incoming')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+              className={`px-3.5 py-1.5 rounded-full font-bold transition-all whitespace-nowrap ${
                 activeTab === 'incoming'
-                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40'
-                  : 'text-blue-400/60 hover:text-blue-400 hover:bg-white/5'
+                  ? 'clay-btn bg-[#1c382f] text-white shadow-sm'
+                  : 'text-[#1c382f] dark:text-[#9bc2b1] hover:bg-[#1c382f]/10'
               }`}
             >
               Masuk ({counts.incoming})
@@ -192,10 +188,10 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
 
             <button
               onClick={() => setActiveTab('in_progress')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+              className={`px-3.5 py-1.5 rounded-full font-bold transition-all whitespace-nowrap ${
                 activeTab === 'in_progress'
-                  ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
-                  : 'text-orange-400/60 hover:text-orange-400 hover:bg-white/5'
+                  ? 'clay-btn clay-btn-orange shadow-sm text-white'
+                  : 'text-[#a3442a] dark:text-[#f1a48e] hover:bg-[#c45c3d]/10'
               }`}
             >
               {t('repairingStatus')} ({counts.in_progress})
@@ -203,10 +199,10 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
 
             <button
               onClick={() => setActiveTab('completed')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+              className={`px-3.5 py-1.5 rounded-full font-bold transition-all whitespace-nowrap ${
                 activeTab === 'completed'
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                  : 'text-emerald-400/60 hover:text-emerald-400 hover:bg-white/5'
+                  ? 'clay-btn clay-btn-green shadow-sm text-white'
+                  : 'text-[#7d591b] dark:text-[#e4c281] hover:bg-[#cca152]/10'
               }`}
             >
               {t('readyStatus')} ({counts.completed})
@@ -214,10 +210,10 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
 
             <button
               onClick={() => setActiveTab('delivered')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+              className={`px-3.5 py-1.5 rounded-full font-bold transition-all whitespace-nowrap ${
                 activeTab === 'delivered'
-                  ? 'bg-white/20 text-white'
-                  : 'text-white/40 hover:bg-white/5'
+                  ? 'clay-btn clay-btn-neutral shadow-sm text-[#483d33]'
+                  : 'text-[#827466] dark:text-[#99ada2] hover:text-[#2d2218]'
               }`}
             >
               {t('deliveredStatus')} ({counts.delivered})
@@ -227,28 +223,28 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
 
         {/* Activity Log Drawer Panel */}
         {showLogs && (
-          <div className="bg-[#282a2c] border border-white/10 rounded-xl p-4 shadow-xl space-y-3 font-mono">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+          <div className="clay-card p-4 sm:p-5 space-y-3 font-mono">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700/60 pb-2">
+              <h3 className="text-xs font-black uppercase tracking-wider text-blue-600 dark:text-cyan-400 flex items-center gap-1.5">
                 <History className="w-4 h-4" /> {t('liveActivityAuditLog')}
               </h3>
-              <button onClick={() => setShowLogs(false)} className="text-xs text-white/40 hover:text-white">
+              <button onClick={() => setShowLogs(false)} className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-white">
                 {t('closeLog')}
               </button>
             </div>
             <div className="space-y-2 max-h-48 overflow-y-auto text-xs">
               {activityLogs.length === 0 ? (
-                <p className="text-white/40 text-center py-4">{t('noLogsYet')}</p>
+                <p className="text-slate-400 text-center py-4">{t('noLogsYet')}</p>
               ) : (
                 activityLogs.map((log) => (
-                  <div key={log.id} className="flex items-center justify-between bg-[#242628] p-2.5 rounded-lg border border-white/5">
+                  <div key={log.id} className="clay-inset flex items-center justify-between p-2.5">
                     <div className="flex items-center gap-2">
-                      <span className="bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded text-[10px] font-bold">
+                      <span className="clay-pill bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 px-2 py-0.5 text-[10px] font-black">
                         {log.plateNumber}
                       </span>
-                      <span className="text-white/80 font-medium">{log.action}</span>
+                      <span className="text-slate-800 dark:text-slate-200 font-semibold">{log.action}</span>
                     </div>
-                    <span className="text-[10px] text-white/40">
+                    <span className="text-[10px] text-slate-400">
                       {new Date(log.timestamp).toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
@@ -261,21 +257,21 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
         {/* Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredVehicles.length === 0 ? (
-            <div className="col-span-full py-16 flex flex-col items-center justify-center text-white/40 border border-dashed border-white/10 rounded-2xl">
-              <Car className="w-12 h-12 mb-3 opacity-30 text-cyan-400" />
-              <p className="text-base font-bold text-white/70">{t('noVehiclesFound')}</p>
-              <p className="text-xs text-white/30">{t('adjustSearchOrIntake')}</p>
+            <div className="col-span-full py-16 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 clay-card border-dashed p-10">
+              <Car className="w-12 h-12 mb-3 opacity-40 text-blue-500 dark:text-cyan-400" />
+              <p className="text-base font-bold text-slate-700 dark:text-slate-200">{t('noVehiclesFound')}</p>
+              <p className="text-xs text-slate-400">{t('adjustSearchOrIntake')}</p>
             </div>
           ) : (
             filteredVehicles.map((veh) => (
               <div
                 key={veh.id}
-                className={`bg-[#242628] border rounded-xl p-4 sm:p-5 flex flex-col justify-between shadow-xl transition-all duration-200 hover:border-white/20 ${
+                className={`clay-card p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 ${
                   veh.status === 'completed'
-                    ? 'border-emerald-500/40 bg-emerald-950/20'
+                    ? 'clay-card-green'
                     : veh.status === 'in_progress'
-                    ? 'border-orange-500/40 bg-[#2e2620]'
-                    : 'border-white/10'
+                    ? 'clay-card-orange'
+                    : ''
                 }`}
               >
                 <div>
@@ -283,41 +279,41 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <button
                       onClick={() => setSelectedVehicleForDetail(veh)}
-                      className="text-lg font-bold tracking-tight text-white font-mono hover:text-cyan-400 transition-colors"
+                      className="text-xl font-black tracking-tight text-slate-900 dark:text-white font-mono hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
                     >
                       {veh.plateNumber}
                     </button>
 
                     <div className="flex items-center gap-1.5 font-mono">
                       {veh.priority === 'express' && (
-                        <span className="bg-orange-500/20 text-orange-400 border border-orange-500/30 px-2 py-0.5 rounded text-[10px] font-bold">
+                        <span className="clay-pill bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 text-[10px] font-black px-2 py-0.5">
                           {t('expressPriority')}
                         </span>
                       )}
                       {veh.priority === 'vip' && (
-                        <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded text-[10px] font-bold">
+                        <span className="clay-pill bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-[10px] font-black px-2 py-0.5">
                           {t('vipPriority')}
                         </span>
                       )}
 
                       {/* Status Badge */}
                       {veh.status === 'incoming' && (
-                        <span className="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase">
+                        <span className="clay-pill bg-blue-500 text-white px-2.5 py-0.5 text-[10px] font-black uppercase">
                           Masuk
                         </span>
                       )}
                       {veh.status === 'in_progress' && (
-                        <span className="bg-orange-500/20 text-orange-400 border border-orange-500/40 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase flex items-center gap-1">
+                        <span className="clay-pill bg-orange-500 text-white px-2.5 py-0.5 text-[10px] font-black uppercase flex items-center gap-1">
                           <Wrench className="w-3 h-3 animate-spin" /> Pembaikan
                         </span>
                       )}
                       {veh.status === 'completed' && (
-                        <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase flex items-center gap-1">
+                        <span className="clay-pill bg-emerald-500 text-white px-2.5 py-0.5 text-[10px] font-black uppercase flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3" /> Siap
                         </span>
                       )}
                       {veh.status === 'delivered' && (
-                        <span className="bg-white/10 text-white/50 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase">
+                        <span className="clay-pill bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-0.5 text-[10px] font-black uppercase">
                           Diserahkan
                         </span>
                       )}
@@ -325,26 +321,26 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                   </div>
 
                   {/* Body Info */}
-                  <div className="flex gap-4 mb-4">
+                  <div className="flex gap-4 mb-4 items-center">
                     <img
                       src={veh.photoUrl}
                       alt={veh.plateNumber}
-                      className="w-24 h-20 object-cover rounded border border-white/10 bg-slate-950 shrink-0"
+                      className="w-24 h-20 object-cover rounded-2xl border-2 border-white/80 shadow-md bg-slate-200 dark:bg-slate-800 shrink-0"
                     />
 
                     <div className="flex-1 min-w-0 space-y-1">
-                      <h4 className="font-bold text-sm text-white truncate">
+                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-white truncate">
                         {veh.vehicleMake} {veh.vehicleModel}
                       </h4>
-                      <p className="text-xs text-cyan-400 font-medium truncate font-mono">{veh.serviceType}</p>
+                      <p className="text-xs text-blue-600 dark:text-cyan-400 font-bold truncate font-mono">{veh.serviceType}</p>
 
-                      <div className="text-[11px] text-white/60 space-y-0.5 pt-1 font-mono">
+                      <div className="text-[11px] text-slate-600 dark:text-slate-400 space-y-0.5 pt-1 font-mono">
                         <p className="truncate flex items-center gap-1">
-                          <User className="w-3 h-3 text-white/40" />
+                          <User className="w-3 h-3 text-slate-400" />
                           {veh.ownerName}
                         </p>
-                        {veh.ownerPhone && <p className="text-white/40 text-[10px]">{veh.ownerPhone}</p>}
-                        <p className="text-white/50 font-semibold text-[10px]">
+                        {veh.ownerPhone && <p className="text-slate-400 text-[10px]">{veh.ownerPhone}</p>}
+                        <p className="text-slate-500 dark:text-slate-400 font-bold text-[10px]">
                           {t('location')} {veh.bayNumber || 'Bay 01'}
                         </p>
                       </div>
@@ -352,11 +348,11 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                   </div>
 
                   {/* Mechanic Line */}
-                  <div className="bg-[#0a0b0e] p-2.5 rounded-lg border border-white/5 mb-4 flex items-center justify-between text-xs font-mono">
-                    <span className="text-white/40 font-medium flex items-center gap-1">
-                      <Wrench className="w-3.5 h-3.5 text-cyan-400" /> {t('technician')}
+                  <div className="clay-inset p-2.5 mb-4 flex items-center justify-between text-xs font-mono">
+                    <span className="text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1">
+                      <Wrench className="w-3.5 h-3.5 text-blue-500 dark:text-cyan-400" /> {t('technician')}
                     </span>
-                    <span className="font-bold text-white">{veh.mechanicName || t('unassigned')}</span>
+                    <span className="font-extrabold text-slate-800 dark:text-white">{veh.mechanicName || t('unassigned')}</span>
                   </div>
 
                   {/* To-Do List & Progress Line Section */}
@@ -370,21 +366,20 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                     const hasMore = tasks.length > 3;
 
                     return (
-                      <div className="bg-[#121417] p-3 rounded-xl border border-white/10 mb-4 space-y-2.5 font-mono">
+                      <div className="clay-inset p-3 mb-4 space-y-2.5 font-mono">
                         {/* Header: Title + Progress Percentage Badge */}
                         <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white">
-                            <ListChecks className="w-4 h-4 text-cyan-400" />
-                            <span>Senarai Tugasan (To-Do)</span>
+                          <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-white">
+                            <ListChecks className="w-4 h-4 text-blue-500 dark:text-cyan-400" />
+                            <span>Senarai Tugasan</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span
-                              className="px-2.5 py-0.5 rounded-full text-[11px] font-black flex items-center gap-1 transition-all duration-300"
+                              className="clay-pill px-2.5 py-0.5 text-[11px] font-black flex items-center gap-1 transition-all duration-300"
                               style={{
                                 background: theme.accentLight,
                                 color: theme.accentColor,
                                 border: `1px solid ${theme.accentBorder}`,
-                                boxShadow: `0 0 10px hsla(${theme.hue}, 95%, 50%, 0.2)`
                               }}
                             >
                               {progress.isAllCompleted ? (
@@ -404,7 +399,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
 
                         {/* Progress Line (Animated Bar) */}
                         <div className="space-y-1">
-                          <div className="w-full bg-[#0a0c0e] h-2.5 rounded-full overflow-hidden border border-white/10 p-0.5 relative">
+                          <div className="w-full clay-inset h-2.5 p-0.5 overflow-hidden">
                             <div
                               className="h-full rounded-full transition-all duration-500 ease-out"
                               style={{
@@ -414,15 +409,15 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                               }}
                             />
                           </div>
-                          <div className="flex items-center justify-between text-[10px] text-white/50">
-                            <span className="truncate max-w-[200px]">
+                          <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+                            <span className="truncate max-w-[200px] font-medium">
                               {progress.isAllCompleted
-                                ? '✨ Semua kerja telah disiapkan'
+                                ? '✨ Semua kerja disiapkan'
                                 : progress.activeTaskTitle
                                 ? `Sedang: ${progress.activeTaskTitle}`
-                                : 'Menunggu giliran mula kerja'}
+                                : 'Menunggu giliran mula'}
                             </span>
-                            <span className="font-bold shrink-0 ml-1" style={{ color: theme.accentColor }}>
+                            <span className="font-black shrink-0 ml-1" style={{ color: theme.accentColor }}>
                               {progress.completedCount}/{progress.totalCount} Siap ({progress.percent}%)
                             </span>
                           </div>
@@ -434,17 +429,17 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                             <div
                               key={task.id}
                               onClick={(e) => handleToggleTask(veh, task.id, e)}
-                              className={`flex items-start gap-2 p-2 rounded-lg cursor-pointer transition-all border select-none ${
+                              className={`flex items-start gap-2 p-2 rounded-xl cursor-pointer transition-all select-none ${
                                 task.completed
-                                  ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-200'
-                                  : 'bg-[#1e2023] hover:bg-[#25282c] border-white/5 text-white/90 hover:border-white/20'
+                                  ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30'
+                                  : 'clay-card hover:translate-y-[-1px] text-slate-800 dark:text-slate-100'
                               }`}
                             >
                               <div
-                                className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center transition-colors shrink-0 ${
+                                className={`mt-0.5 w-4 h-4 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
                                   task.completed
-                                    ? 'bg-emerald-500 text-black shadow-sm'
-                                    : 'border border-white/30 hover:border-cyan-400 bg-black/40'
+                                    ? 'bg-emerald-500 text-white shadow-sm'
+                                    : 'border-2 border-slate-300 dark:border-slate-600 bg-white/60 dark:bg-slate-800'
                                 }`}
                               >
                                 {task.completed && <Check className="w-3 h-3 stroke-[3]" />}
@@ -452,13 +447,13 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                               <div className="flex-1 min-w-0">
                                 <p
                                   className={`text-xs leading-snug ${
-                                    task.completed ? 'line-through text-emerald-300/70' : 'text-white/90 font-medium'
+                                    task.completed ? 'line-through text-emerald-700 dark:text-emerald-300/70' : 'font-semibold'
                                   }`}
                                 >
                                   {task.title}
                                 </p>
                                 {task.completed && task.completedAt && (
-                                  <span className="text-[9px] text-emerald-400/60 block mt-0.5">
+                                  <span className="text-[9px] text-emerald-600 dark:text-emerald-400/70 block mt-0.5">
                                     ✓ Siap {new Date(task.completedAt).toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}
                                   </span>
                                 )}
@@ -476,7 +471,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                                 e.stopPropagation();
                                 toggleExpandCardTasks(veh.id);
                               }}
-                              className="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1 py-1"
+                              className="text-[11px] text-blue-600 dark:text-cyan-400 hover:underline font-bold flex items-center gap-1 py-1"
                             >
                               {isExpanded ? (
                                 <>
@@ -484,12 +479,12 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                                 </>
                               ) : (
                                 <>
-                                  <ChevronDown className="w-3.5 h-3.5" /> Lihat {tasks.length - 3} tugasan lagi...
+                                  <ChevronDown className="w-3.5 h-3.5" /> Lihat {tasks.length - 3} lagi...
                                 </>
                               )}
                             </button>
                           ) : (
-                            <span className="text-[10px] text-white/30">{tasks.length} tugasan berdaftar</span>
+                            <span className="text-[10px] text-slate-400">{tasks.length} tugasan berdaftar</span>
                           )}
 
                           {!isAdding ? (
@@ -500,9 +495,9 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                                 setAddingTaskId(veh.id);
                                 setNewTaskTitle('');
                               }}
-                              className="text-[11px] text-white/70 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded border border-white/10 flex items-center gap-1 transition-colors"
+                              className="clay-btn clay-btn-ghost text-[11px] px-2.5 py-1 gap-1"
                             >
-                              <Plus className="w-3 h-3 text-cyan-400" /> Tambah Kerja
+                              <Plus className="w-3 h-3 text-blue-600 dark:text-cyan-400" /> Tambah Kerja
                             </button>
                           ) : null}
                         </div>
@@ -511,7 +506,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                         {isAdding && (
                           <div
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-[#181a1d] p-2 rounded-lg border border-cyan-500/30 space-y-2 mt-2"
+                            className="clay-card p-2.5 space-y-2 mt-2"
                           >
                             <input
                               type="text"
@@ -524,7 +519,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                                 }
                               }}
                               placeholder="Contoh: Skim disc rotor brek belakang..."
-                              className="w-full bg-black/50 border border-white/20 rounded px-2.5 py-1.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-cyan-400"
+                              className="clay-inset w-full px-2.5 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
                               autoFocus
                             />
                             <div className="flex justify-end gap-1.5">
@@ -534,14 +529,14 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                                   setAddingTaskId(null);
                                   setNewTaskTitle('');
                                 }}
-                                className="px-2 py-1 rounded text-[11px] text-white/50 hover:text-white"
+                                className="clay-btn clay-btn-ghost px-2.5 py-1 text-[11px]"
                               >
                                 Batal
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleAddNewTask(veh)}
-                                className="px-2.5 py-1 rounded text-[11px] bg-cyan-500 hover:bg-cyan-400 text-black font-bold flex items-center gap-1"
+                                className="clay-btn clay-btn-primary px-3 py-1 text-[11px] font-bold flex items-center gap-1"
                               >
                                 <Plus className="w-3 h-3" /> Simpan Tugasan
                               </button>
@@ -551,9 +546,9 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
 
                         {/* All Completed Notice */}
                         {progress.isAllCompleted && veh.status !== 'completed' && veh.status !== 'delivered' && (
-                          <div className="bg-emerald-950/40 border border-emerald-500/40 p-2 rounded-lg text-center text-xs text-emerald-300 font-semibold flex items-center justify-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-spin" />
-                            <span>Semua tugas selesai! Sedia untuk menekan butang siap di bawah.</span>
+                          <div className="bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-500/40 p-2 rounded-xl text-center text-xs text-emerald-800 dark:text-emerald-200 font-bold flex items-center justify-center gap-1.5 shadow-sm">
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-spin" />
+                            <span>Semua tugas selesai! Sedia untuk ditandakan siap.</span>
                           </div>
                         )}
                       </div>
@@ -562,22 +557,22 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                 </div>
 
                 {/* Card Action Stage Buttons */}
-                <div className="pt-3 border-t border-white/10 space-y-2 font-mono">
+                <div className="pt-3 border-t border-slate-200 dark:border-slate-700/60 space-y-2 font-mono">
                   <div className="grid grid-cols-2 gap-2">
                     {/* Action Stage Progress Button */}
                     {veh.status === 'incoming' && (
                       <button
                         onClick={() => onUpdateStatus(veh.id, 'in_progress')}
-                        className="col-span-2 py-2 px-3 rounded-xl bg-orange-500 hover:bg-orange-400 text-black font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-md transition-all"
+                        className="col-span-2 clay-btn clay-btn-orange py-2 px-3 text-xs uppercase font-black flex items-center justify-center gap-1.5"
                       >
-                        <Play className="w-3.5 h-3.5" /> {t('startRepairWork')}
+                        <Play className="w-3.5 h-3.5 fill-current" /> {t('startRepairWork')}
                       </button>
                     )}
 
                     {veh.status === 'in_progress' && (
                       <button
                         onClick={() => onUpdateStatus(veh.id, 'completed')}
-                        className="col-span-2 py-2 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs uppercase flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all"
+                        className="col-span-2 clay-btn clay-btn-green py-2 px-3 text-xs uppercase font-black flex items-center justify-center gap-1.5"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" /> {t('markServiceCompleted')}
                       </button>
@@ -586,7 +581,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                     {veh.status === 'completed' && (
                       <button
                         onClick={() => onUpdateStatus(veh.id, 'delivered')}
-                        className="col-span-2 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase flex items-center justify-center gap-1.5"
+                        className="col-span-2 clay-btn clay-btn-ghost py-2 px-3 text-xs uppercase font-extrabold flex items-center justify-center gap-1.5"
                       >
                         <Check className="w-3.5 h-3.5" /> {t('markDeliveredHandover')}
                       </button>
@@ -595,7 +590,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                     {veh.status === 'delivered' && (
                       <button
                         onClick={() => onUpdateStatus(veh.id, 'incoming')}
-                        className="col-span-2 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white/60 font-bold text-xs uppercase flex items-center justify-center gap-1.5"
+                        className="col-span-2 clay-btn clay-btn-ghost py-2 px-3 text-xs uppercase font-bold flex items-center justify-center gap-1.5"
                       >
                         {t('reopenIntake')}
                       </button>
@@ -604,9 +599,9 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                     {/* Secondary Detail Button */}
                     <button
                       onClick={() => setSelectedVehicleForDetail(veh)}
-                      className="py-1.5 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 font-medium text-xs flex items-center justify-center gap-1 col-span-2 border border-white/10"
+                      className="col-span-2 clay-btn clay-btn-ghost py-2 px-3 text-xs font-bold flex items-center justify-center gap-1"
                     >
-                      <Eye className="w-3.5 h-3.5 text-cyan-400" /> {t('editJobSheet')}
+                      <Eye className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" /> {t('editJobSheet')}
                     </button>
                   </div>
                 </div>

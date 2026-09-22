@@ -213,29 +213,58 @@ export function deleteTaskFromList(tasks: ServiceTask[], taskId: string): Servic
 
 /**
  * Returns dynamic color theme based on service completion percentage (0% to 100%)
- * Gradually transitions from vibrant workshop orange (hue ~26°) to bright emerald green (hue ~142°)
+ * Inspired by botanical artisan tones: terracotta rust (0%) -> antique ochre (50%) -> forest pine (100%)
  */
 export function getProgressColorTheme(percent: number) {
   const clamped = Math.max(0, Math.min(100, Math.round(percent)));
-  // 0% -> hue 26 (vibrant deep orange), 100% -> hue 142 (rich emerald green)
-  const hue = Math.round(26 + (clamped / 100) * 116);
-  // Saturation: 96% down to 86%
-  const sat = Math.round(96 - (clamped / 100) * 10);
-  // Lightness: 52% down to 48% (for crisp, high-contrast black text on solid badge)
-  const light = Math.round(52 - (clamped / 100) * 4);
-
-  return {
-    hue,
-    percent: clamped,
-    badgeBg: `linear-gradient(145deg, hsl(${hue + 4}, ${sat}%, ${light + 3}%), hsl(${hue - 4}, ${sat}%, ${light - 4}%))`,
-    badgeBorder: `hsla(${hue}, 100%, 75%, 0.65)`,
-    badgeShadow: `0 8px 24px hsla(${hue}, 95%, 45%, 0.45)`,
-    badgeText: '#000000',
-    accentColor: `hsl(${hue}, 95%, 52%)`,
-    accentLight: `hsla(${hue}, 95%, 52%, 0.16)`,
-    accentBorder: `hsla(${hue}, 90%, 55%, 0.38)`,
-    textGlow: `0 0 10px hsla(${hue}, 95%, 55%, 0.5)`,
-    progressBarGradient: `linear-gradient(90deg, #ea580c 0%, hsl(${hue}, 95%, 50%) 100%)`,
-    progressBarGlow: `0 0 14px hsla(${hue}, 95%, 50%, 0.6)`,
-  };
+  
+  if (clamped < 40) {
+    // Terracotta Rust
+    return {
+      hue: 16,
+      percent: clamped,
+      badgeBg: 'linear-gradient(135deg, #c45c3d 0%, #ad4a2d 100%)',
+      badgeBorder: 'rgba(255, 255, 255, 0.4)',
+      badgeShadow: '0 4px 14px -1px rgba(180, 75, 45, 0.35)',
+      badgeText: '#ffffff',
+      accentColor: '#c45c3d',
+      accentLight: 'rgba(196, 92, 61, 0.12)',
+      accentBorder: 'rgba(196, 92, 61, 0.3)',
+      textGlow: 'none',
+      progressBarGradient: 'linear-gradient(90deg, #d9785c 0%, #c45c3d 100%)',
+      progressBarGlow: '0 2px 8px rgba(196, 92, 61, 0.3)',
+    };
+  } else if (clamped < 80) {
+    // Antique Ochre / Warm Gold
+    return {
+      hue: 38,
+      percent: clamped,
+      badgeBg: 'linear-gradient(135deg, #d4a354 0%, #be8c3a 100%)',
+      badgeBorder: 'rgba(255, 255, 255, 0.4)',
+      badgeShadow: '0 4px 14px -1px rgba(190, 140, 58, 0.35)',
+      badgeText: '#ffffff',
+      accentColor: '#be8c3a',
+      accentLight: 'rgba(190, 140, 58, 0.12)',
+      accentBorder: 'rgba(190, 140, 58, 0.3)',
+      textGlow: 'none',
+      progressBarGradient: 'linear-gradient(90deg, #c45c3d 0%, #d4a354 100%)',
+      progressBarGlow: '0 2px 8px rgba(190, 140, 58, 0.3)',
+    };
+  } else {
+    // Rich Botanical Forest Green
+    return {
+      hue: 155,
+      percent: clamped,
+      badgeBg: 'linear-gradient(135deg, #27614d 0%, #1c4b3b 100%)',
+      badgeBorder: 'rgba(255, 255, 255, 0.4)',
+      badgeShadow: '0 4px 14px -1px rgba(28, 75, 59, 0.35)',
+      badgeText: '#ffffff',
+      accentColor: '#27614d',
+      accentLight: 'rgba(39, 97, 77, 0.12)',
+      accentBorder: 'rgba(39, 97, 77, 0.3)',
+      textGlow: 'none',
+      progressBarGradient: 'linear-gradient(90deg, #d4a354 0%, #27614d 100%)',
+      progressBarGlow: '0 2px 8px rgba(39, 97, 77, 0.3)',
+    };
+  }
 }

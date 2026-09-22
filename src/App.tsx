@@ -94,10 +94,10 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#353839] flex flex-col items-center justify-center text-slate-100 p-6">
-        <Loader2 className="w-10 h-10 text-amber-400 animate-spin mb-4" />
-        <h2 className="text-lg font-extrabold tracking-tight">LOADING SPEEDPRO WORKSHOP SYSTEM...</h2>
-        <p className="text-xs text-slate-400 mt-1">Connecting real-time display queue & mechanics database</p>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-12 h-12 rounded-full border-3 border-[#c45c3d] border-t-transparent animate-spin mb-4" />
+        <h2 className="text-xl font-serif font-bold text-[#1c382f] dark:text-[#f3ede3] tracking-tight">QES FORD AUTOPARTS</h2>
+        <p className="text-xs text-[#716152] dark:text-[#a3b8ad] mt-1 font-mono">Memuatkan sistem paparan bengkel & pangkalan data masa-nyata...</p>
       </div>
     );
   }
@@ -107,7 +107,7 @@ export default function App() {
   const completedCount = vehicles.filter((v) => v.status === 'completed').length;
 
   return (
-    <div className="min-h-screen bg-[#353839] text-slate-100 flex flex-col font-sans antialiased">
+    <div className="min-h-screen flex flex-col antialiased selection:bg-[#c45c3d]/20 selection:text-[#1c382f]">
       {/* Top Header Navigation */}
       <HeaderNav
         currentView={currentView}

@@ -138,37 +138,37 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
   const getStatusBadge = (status: VehicleStatus) => {
     switch (status) {
       case 'incoming':
-        return <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase">{t('incomingIntakeStage')}</span>;
+        return <span className="clay-pill bg-blue-500 text-white px-3 py-1 text-xs font-bold uppercase">{t('incomingIntakeStage')}</span>;
       case 'in_progress':
-        return <span className="bg-sky-500/20 text-sky-300 border border-sky-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase">{t('repairInProgressStage')}</span>;
+        return <span className="clay-pill bg-orange-500 text-white px-3 py-1 text-xs font-bold uppercase flex items-center gap-1"><Sparkles className="w-3 h-3 animate-spin" /> {t('repairInProgressStage')}</span>;
       case 'completed':
-        return <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase">{t('serviceCompletedStage')}</span>;
+        return <span className="clay-pill bg-emerald-500 text-white px-3 py-1 text-xs font-bold uppercase flex items-center gap-1"><Check className="w-3 h-3 stroke-[3]" /> {t('serviceCompletedStage')}</span>;
       case 'delivered':
-        return <span className="bg-slate-700 text-slate-300 px-3 py-1 rounded-full text-xs font-bold uppercase">{t('deliveredToOwnerStage')}</span>;
+        return <span className="clay-pill bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1 text-xs font-bold uppercase">{t('deliveredToOwnerStage')}</span>;
     }
   };
 
   return (
     <div
       ref={scrollContainerRef}
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md p-2 sm:p-4"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-2 sm:p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div className="min-h-full flex items-start justify-center py-2 sm:py-6">
-        <div className="bg-[#282a2c] border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl my-auto">
+        <div className="clay-card rounded-3xl w-full max-w-2xl overflow-hidden my-auto border-2 border-white/60 dark:border-white/10">
           {/* Header */}
-          <div className="sticky top-0 z-20 bg-[#1e2022] px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between border-b border-white/10 font-mono shadow-md">
+          <div className="sticky top-0 z-20 bg-slate-100/90 dark:bg-slate-800/90 backdrop-blur-md px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700/60 font-mono">
             <div className="flex items-center gap-2.5 sm:gap-3">
-              <span className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-black text-sm sm:text-lg px-2.5 sm:px-3 py-1 rounded tracking-wider shadow-md">
+              <span className="clay-pill bg-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 font-black text-sm sm:text-lg px-3 py-1 tracking-wider shadow-sm">
                 {vehicle.plateNumber}
               </span>
               <div>
-                <h3 className="text-sm sm:text-base font-bold text-white">
+                <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
                   {vehicle.vehicleMake} {vehicle.vehicleModel}
                 </h3>
-                <p className="text-[10px] sm:text-[11px] text-white/40">
+                <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400">
                   {t('registeredAt')} {new Date(vehicle.entryTime).toLocaleString('ms-MY')}
                 </p>
               </div>
@@ -176,15 +176,15 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
             <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 onClick={handlePrintJobTicket}
-                className="p-1.5 sm:p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1 border border-white/10"
+                className="clay-btn clay-btn-ghost text-xs font-bold p-1.5 sm:px-3 sm:py-1.5 flex items-center gap-1"
                 title="Cetak Slip Kerja Pelanggan"
               >
-                <Printer className="w-4 h-4 text-cyan-400" />
+                <Printer className="w-4 h-4 text-blue-600 dark:text-cyan-400" />
                 <span className="hidden sm:inline">{t('printSlip')}</span>
               </button>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/60 transition-all"
+                className="clay-btn clay-btn-ghost p-1.5 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white"
                 aria-label="Tutup"
               >
                 <X className="w-5 h-5" />
@@ -193,11 +193,11 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
           </div>
 
           {/* Body Content */}
-          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 text-[#e0e0e0] font-sans">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 text-slate-800 dark:text-slate-200 font-sans">
           {/* Status Quick Bar */}
-          <div className="bg-[#242628] p-4 rounded-xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
+          <div className="clay-inset p-4 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
             <div>
-              <span className="text-xs text-white/50 uppercase font-bold tracking-wider block mb-1">
+              <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider block mb-1">
                 {t('currentJobStatus')}
               </span>
               {getStatusBadge(vehicle.status)}
@@ -208,16 +208,16 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
               {vehicle.status === 'incoming' && (
                 <button
                   onClick={() => onUpdateStatus(vehicle.id, 'in_progress')}
-                  className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-400 text-black font-black text-xs uppercase flex items-center gap-1.5 shadow-md"
+                  className="clay-btn clay-btn-orange py-2 px-4 text-xs font-black uppercase flex items-center gap-1.5"
                 >
-                  <Play className="w-4 h-4" /> {t('startRepairWork')}
+                  <Play className="w-4 h-4 fill-current" /> {t('startRepairWork')}
                 </button>
               )}
 
               {vehicle.status === 'in_progress' && (
                 <button
                   onClick={() => onUpdateStatus(vehicle.id, 'completed')}
-                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs uppercase flex items-center gap-1.5 shadow-md"
+                  className="clay-btn clay-btn-green py-2 px-4 text-xs font-black uppercase flex items-center gap-1.5"
                 >
                   <CheckCircle2 className="w-4 h-4" /> {t('markServiceCompleted')}
                 </button>
@@ -226,7 +226,7 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
               {vehicle.status === 'completed' && (
                 <button
                   onClick={() => onUpdateStatus(vehicle.id, 'delivered')}
-                  className="px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs uppercase flex items-center gap-1.5"
+                  className="clay-btn clay-btn-ghost py-2 px-4 text-xs font-bold uppercase flex items-center gap-1.5"
                 >
                   {t('markDeliveredHandover')}
                 </button>
@@ -241,17 +241,17 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
               <img
                 src={vehicle.photoUrl}
                 alt={vehicle.plateNumber}
-                className="w-full h-44 object-cover rounded-xl border border-white/10 bg-slate-950"
+                className="w-full h-44 object-cover rounded-2xl border-2 border-white/80 shadow-md bg-slate-200 dark:bg-slate-900"
               />
 
-              <div className="bg-[#242628] p-4 rounded-xl border border-white/10 space-y-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-white/50 flex items-center gap-1">
-                  <User className="w-3.5 h-3.5 text-cyan-400" /> {t('ownerContact')}
+              <div className="clay-inset p-4 space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                  <User className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" /> {t('ownerContact')}
                 </h4>
-                <p className="text-sm font-bold text-white">{vehicle.ownerName}</p>
+                <p className="text-sm font-extrabold text-slate-900 dark:text-white">{vehicle.ownerName}</p>
                 {vehicle.ownerPhone && (
-                  <p className="text-xs text-cyan-300 flex items-center gap-1">
-                    <Phone className="w-3 h-3 text-white/40" />
+                  <p className="text-xs text-blue-600 dark:text-cyan-400 font-bold flex items-center gap-1">
+                    <Phone className="w-3 h-3 text-slate-400" />
                     {vehicle.ownerPhone}
                   </p>
                 )}
@@ -261,38 +261,38 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
             {/* Right Column: Workshop Specs & Assignments */}
             <div className="space-y-4">
               {/* Service Type */}
-              <div className="bg-[#242628] p-4 rounded-xl border border-white/10">
-                <label className="text-xs font-bold text-white/50 uppercase tracking-wider block mb-1">
+              <div className="clay-inset p-4">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
                   {t('serviceCategory')}
                 </label>
-                <p className="text-sm font-bold text-cyan-400">{vehicle.serviceType}</p>
+                <p className="text-sm font-black text-blue-600 dark:text-cyan-400">{vehicle.serviceType}</p>
               </div>
 
               {/* Bay Number */}
               <div>
-                <label className="text-xs font-bold text-white/50 uppercase tracking-wider block mb-1">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block mb-1">
                   {t('workshopBayLocation')}
                 </label>
                 <div className="relative">
-                  <MapPin className="w-4 h-4 absolute left-3 top-3 text-white/40" />
+                  <MapPin className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
                   <input
                     type="text"
                     value={selectedBay}
                     onChange={(e) => setSelectedBay(e.target.value)}
-                    className="w-full bg-[#242628] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+                    className="clay-inset w-full pl-10 pr-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none font-bold"
                   />
                 </div>
               </div>
 
               {/* Technician Dropdown */}
               <div>
-                <label className="text-xs font-bold text-white/50 uppercase tracking-wider block mb-1">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block mb-1">
                   {t('assignTechnician')}
                 </label>
                 <select
                   value={selectedMechanic}
                   onChange={(e) => setSelectedMechanic(e.target.value)}
-                  className="w-full bg-[#242628] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+                  className="clay-inset w-full px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none font-bold cursor-pointer"
                 >
                   <option value="">{t('unassigned')}</option>
                   {mechanics.map((m) => (
@@ -305,14 +305,14 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
 
               {/* Repair Notes */}
               <div>
-                <label className="text-xs font-bold text-white/50 uppercase tracking-wider block mb-1">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block mb-1">
                   {t('mechanicRepairNotes')}
                 </label>
                 <textarea
                   rows={3}
                   value={editingNotes}
                   onChange={(e) => setEditingNotes(e.target.value)}
-                  className="w-full bg-[#242628] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
+                  className="clay-inset w-full px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none font-mono"
                   placeholder="Tambah nota mengenai kemajuan pembaikan..."
                 />
               </div>
@@ -324,21 +324,21 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
             const progress = calculateServiceProgress(tasks, vehicle.status);
             const theme = getProgressColorTheme(progress.percent);
             return (
-              <div className="bg-[#1a1c1e] p-5 rounded-2xl border border-white/10 space-y-4 font-mono">
+              <div className="clay-card p-5 space-y-4 font-mono">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-white/10">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-700/60">
                   <div>
-                    <h4 className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
-                      <ListChecks className="w-4 h-4 text-cyan-400" />
+                    <h4 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+                      <ListChecks className="w-4 h-4 text-blue-600 dark:text-cyan-400" />
                       Senarai Semak Tugasan Servis (Job Checklist)
                     </h4>
-                    <p className="text-xs text-white/50 mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       Tandakan setiap tugasan setelah selesai. Kemajuan dikemas kini secara langsung di skrin TV pelanggan.
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span
-                      className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 transition-all duration-300"
+                      className="clay-pill px-3 py-1 text-xs font-black flex items-center gap-1 transition-all duration-300"
                       style={{
                         background: theme.accentLight,
                         color: theme.accentColor,
@@ -361,11 +361,11 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
 
                 {/* Progress Line */}
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs text-white/60">
-                    <span>Kemajuan Keseluruhan Kerja</span>
-                    <span className="font-bold" style={{ color: theme.accentColor }}>{progress.percent}%</span>
+                  <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span className="font-semibold">Kemajuan Keseluruhan Kerja</span>
+                    <span className="font-black" style={{ color: theme.accentColor }}>{progress.percent}%</span>
                   </div>
-                  <div className="w-full bg-[#0e1013] h-3 rounded-full overflow-hidden border border-white/10 p-0.5 relative">
+                  <div className="w-full clay-inset h-3 p-0.5 overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-500 ease-out"
                       style={{
@@ -382,10 +382,10 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
                   {tasks.map((task, idx) => (
                     <div
                       key={task.id}
-                      className={`flex items-center justify-between gap-3 p-3 rounded-xl border transition-all ${
+                      className={`flex items-center justify-between gap-3 p-3 rounded-2xl transition-all ${
                         task.completed
-                          ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-200'
-                          : 'bg-[#242628] border-white/10 text-white/90 hover:border-white/20'
+                          ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40'
+                          : 'clay-card hover:-translate-y-0.5 text-slate-800 dark:text-slate-100'
                       }`}
                     >
                       <div
@@ -393,25 +393,25 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
                         className="flex items-center gap-3 cursor-pointer flex-1 min-w-0 select-none"
                       >
                         <div
-                          className={`w-5 h-5 rounded flex items-center justify-center transition-colors shrink-0 ${
+                          className={`w-5 h-5 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
                             task.completed
-                              ? 'bg-emerald-500 text-black shadow-sm'
-                              : 'border border-white/30 hover:border-cyan-400 bg-black/40'
+                              ? 'bg-emerald-500 text-white shadow-sm'
+                              : 'border-2 border-slate-300 dark:border-slate-600 bg-white/60 dark:bg-slate-800'
                           }`}
                         >
                           {task.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p
-                            className={`text-xs sm:text-sm font-medium leading-snug ${
-                              task.completed ? 'line-through text-emerald-300/70' : 'text-white'
+                            className={`text-xs sm:text-sm leading-snug ${
+                              task.completed ? 'line-through text-emerald-700 dark:text-emerald-300/70 font-medium' : 'text-slate-900 dark:text-white font-bold'
                             }`}
                           >
-                            <span className="text-white/40 mr-1.5">{idx + 1}.</span>
+                            <span className="text-slate-400 mr-1.5">{idx + 1}.</span>
                             {task.title}
                           </p>
                           {task.completed && task.completedAt && (
-                            <span className="text-[10px] text-emerald-400/70 block mt-0.5">
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400/70 block mt-0.5">
                               Disiapkan pada {new Date(task.completedAt).toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           )}
@@ -421,7 +421,7 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
                       <button
                         type="button"
                         onClick={() => handleDeleteTask(task.id)}
-                        className="p-1.5 text-white/30 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors shrink-0"
+                        className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg transition-colors shrink-0"
                         title="Padam tugasan"
                       >
                         <Trash className="w-3.5 h-3.5" />
@@ -443,14 +443,14 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
                       }
                     }}
                     placeholder="Tambah tugasan tersuai (contoh: Skim disc rotor brek belakang)..."
-                    className="flex-1 bg-[#242628] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-cyan-400"
+                    className="clay-inset flex-1 px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleAddTask}
-                    className="px-3 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs flex items-center gap-1 shrink-0"
+                    className="clay-btn clay-btn-primary px-3 py-2 text-xs font-bold flex items-center gap-1 shrink-0"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Tambah Tugasan
+                    <Plus className="w-3.5 h-3.5 stroke-[3]" /> Tambah Tugasan
                   </button>
                 </div>
               </div>
@@ -458,7 +458,7 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
           })()}
 
           {/* Modal Footer Actions */}
-          <div className="flex items-center justify-between pt-4 border-t border-white/10 font-mono">
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700/60 font-mono">
             <button
               onClick={async () => {
                 if (confirm(`Adakah anda pasti mahu memadam rekod kenderaan ${vehicle.plateNumber}?`)) {
@@ -466,7 +466,7 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
                   onClose();
                 }
               }}
-              className="px-3 py-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-500/30 font-semibold text-xs flex items-center gap-1.5 transition-all"
+              className="clay-btn clay-btn-ghost text-red-600 dark:text-red-400 px-3 py-2 text-xs font-bold flex items-center gap-1.5"
             >
               <Trash2 className="w-4 h-4" /> {t('deleteRecord')}
             </button>
@@ -474,14 +474,14 @@ export const VehicleDetailModal: React.FC<VehicleDetailModalProps> = ({
             <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-white/10 text-white/70 font-semibold text-xs hover:bg-white/20"
+                className="clay-btn clay-btn-ghost px-4 py-2 text-xs font-bold"
               >
                 {t('close')}
               </button>
               <button
                 onClick={handleSaveDetails}
                 disabled={saving}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-black text-xs uppercase shadow-md disabled:opacity-50"
+                className="clay-btn clay-btn-primary px-5 py-2 text-xs uppercase tracking-wider font-black shadow-md disabled:opacity-50"
               >
                 {saving ? t('saving') : t('saveChanges')}
               </button>

@@ -106,26 +106,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   return (
-    <div className="min-h-[calc(100vh-5rem)] bg-[#353839] text-[#e0e0e0] p-4 sm:p-6 pb-24 font-sans">
+    <div className="min-h-[calc(100vh-5.5rem)] p-3 sm:p-6 pb-24 font-sans">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
-        <div className="bg-[#282a2c] border border-white/10 p-6 rounded-xl shadow-2xl">
-          <span className="text-[#3b82f6] font-mono text-[11px] tracking-widest uppercase block mb-1">
-            {t('systemSetup')}
+        <div className="clay-card p-6 border border-[#e5dac7] dark:border-[#2f5547]">
+          <span className="text-[#c45c3d] dark:text-[#df785d] font-serif italic text-xs tracking-wider block mb-1">
+            ❧ Bengkel Artisan & Konfigurasi Paparan Ticker
           </span>
-          <h2 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-            SISTEM BENGKEL <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400">{t('workshopSettingsTitle')}</span>
+          <h2 className="text-xl sm:text-2xl font-serif font-black text-[#1c382f] dark:text-[#f4efe4] tracking-tight flex items-center gap-2">
+            Tetapan <span className="text-[#c45c3d] font-normal italic">{t('workshopSettingsTitle')}</span>
           </h2>
-          <p className="text-xs text-white/50 mt-1 font-mono">
+          <p className="text-xs text-[#6e5e50] dark:text-[#a0b5a9] mt-1 font-serif italic">
             {t('settingsDescription')}
           </p>
         </div>
 
         {/* Section 1: Live Marquee Announcement Ticker Control */}
-        <div className="bg-[#282a2c] border border-white/10 rounded-xl p-6 shadow-2xl space-y-6">
-          <div className="flex items-center gap-2 text-cyan-400">
-            <Megaphone className="w-5 h-5 font-bold" />
-            <h3 className="font-mono font-bold text-base tracking-widest uppercase text-white">
+        <div className="clay-card p-6 space-y-6 border border-[#e5dac7] dark:border-[#2f5547]">
+          <div className="flex items-center gap-2 text-[#1c382f] dark:text-[#dfb974]">
+            <Megaphone className="w-5 h-5 text-[#c45c3d]" />
+            <h3 className="font-serif font-bold text-base tracking-wide text-[#1c382f] dark:text-[#f7f2e9]">
               {t('tvDisplayMarqueeAnnouncements')}
             </h3>
           </div>
@@ -137,12 +137,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               placeholder={t('typeNoticePlaceholder')}
               value={newTickerText}
               onChange={(e) => setNewTickerText(e.target.value)}
-              className="flex-1 bg-[#242628] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400 w-full font-mono"
+              className="clay-inset flex-1 px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none w-full font-mono font-medium"
             />
             <select
               value={tickerType}
               onChange={(e) => setTickerType(e.target.value as 'info' | 'alert' | 'promo')}
-              className="bg-[#242628] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400 shrink-0 font-mono"
+              className="clay-inset px-3 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none shrink-0 font-mono font-bold cursor-pointer"
             >
               <option value="info">{t('infoNotice')}</option>
               <option value="alert">{t('alertUrgent')}</option>
@@ -151,22 +151,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="submit"
               disabled={addingTicker}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-mono font-bold text-xs uppercase tracking-wider flex items-center gap-1 shrink-0 disabled:opacity-50"
+              className="clay-btn clay-btn-primary px-5 py-2.5 text-xs uppercase tracking-wider font-extrabold flex items-center gap-1.5 shrink-0 disabled:opacity-50"
             >
-              <Plus className="w-4 h-4" /> {t('addTicker')}
+              <Plus className="w-4 h-4 stroke-[3]" /> {t('addTicker')}
             </button>
           </form>
 
           {/* Active Tickers List */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-xs font-mono font-bold text-white/40 uppercase tracking-wider">
+              <h4 className="text-xs font-mono font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 {t('activeTvTickers')} ({announcements.length})
               </h4>
             </div>
 
             {announcements.length === 0 ? (
-              <div className="bg-[#242628] border border-white/5 rounded-xl p-5 text-center font-mono text-xs text-white/40">
+              <div className="clay-inset p-5 text-center font-mono text-xs text-slate-400">
                 {t('noActiveTickers')}
               </div>
             ) : (
@@ -178,17 +178,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   return (
                     <div
                       key={ann.id}
-                      className="bg-[#1c1e20] border-2 border-cyan-500/50 p-3.5 rounded-xl space-y-3 text-xs font-mono shadow-xl transition-all"
+                      className="clay-card-blue p-4 space-y-3 text-xs font-mono transition-all"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="text-xs font-black text-blue-900 dark:text-blue-200 uppercase tracking-wider flex items-center gap-1.5">
                           <Pencil className="w-3.5 h-3.5" />
                           {t('editTickerAnnouncement')}
                         </span>
                         <button
                           type="button"
                           onClick={cancelEditTicker}
-                          className="text-white/40 hover:text-white p-1"
+                          className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1"
                           title={t('cancelEdit')}
                         >
                           <X className="w-4 h-4" />
@@ -200,7 +200,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           rows={2}
                           value={editingText}
                           onChange={(e) => setEditingText(e.target.value)}
-                          className="w-full bg-[#121416] border border-white/10 rounded-lg p-2.5 text-xs font-semibold text-white focus:outline-none focus:border-cyan-400 uppercase"
+                          className="clay-inset w-full p-2.5 text-xs font-bold text-slate-900 dark:text-white focus:outline-none uppercase"
                           placeholder="Masukkan teks pengumuman..."
                           autoFocus
                         />
@@ -208,20 +208,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                       <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] text-white/40 uppercase font-bold mr-1">Kategori:</span>
+                          <span className="text-[10px] text-slate-500 uppercase font-extrabold mr-1">Kategori:</span>
                           {(['info', 'alert', 'promo'] as const).map((type) => (
                             <button
                               key={type}
                               type="button"
                               onClick={() => setEditingType(type)}
-                              className={`px-2 py-1 rounded text-[10px] font-bold uppercase border transition-all ${
+                              className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase transition-all ${
                                 editingType === type
                                   ? type === 'alert'
-                                    ? 'bg-red-500/30 text-red-300 border-red-500/60 shadow-sm'
+                                    ? 'bg-red-500 text-white shadow-sm'
                                     : type === 'promo'
-                                    ? 'bg-purple-500/30 text-purple-200 border-purple-500/60 shadow-sm'
-                                    : 'bg-cyan-500/30 text-cyan-300 border-cyan-500/60 shadow-sm'
-                                  : 'bg-white/5 text-white/40 border-white/10 hover:bg-white/10'
+                                    ? 'bg-purple-500 text-white shadow-sm'
+                                    : 'clay-btn clay-btn-primary shadow-sm'
+                                  : 'clay-btn clay-btn-ghost text-slate-500'
                               }`}
                             >
                               {type === 'alert' ? t('alertUrgent') : type === 'promo' ? t('specialOffer') : t('infoNotice')}
@@ -234,7 +234,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             type="button"
                             onClick={cancelEditTicker}
                             disabled={savingTicker}
-                            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/10 text-xs font-bold uppercase tracking-wider transition-all"
+                            className="clay-btn clay-btn-ghost px-3 py-1.5 text-xs font-bold uppercase tracking-wider"
                           >
                             {t('cancelEdit')}
                           </button>
@@ -242,7 +242,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             type="button"
                             onClick={() => handleSaveEditTicker(ann.id)}
                             disabled={savingTicker || !editingText.trim()}
-                            className="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md disabled:opacity-50"
+                            className="clay-btn clay-btn-primary px-3.5 py-1.5 text-xs uppercase tracking-wider font-black flex items-center gap-1.5 disabled:opacity-50"
                           >
                             <Check className="w-3.5 h-3.5 stroke-[3]" />
                             <span>{savingTicker ? t('savingTicker') : t('saveTicker')}</span>
@@ -256,25 +256,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 return (
                   <div
                     key={ann.id}
-                    className="bg-[#242628] hover:bg-[#2a2c2f] border border-white/10 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono transition-all group"
+                    className="clay-card p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono transition-all group hover:-translate-y-0.5"
                   >
                     <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
                       <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0 ${
+                        className={`clay-pill px-2 py-0.5 text-[10px] font-black uppercase shrink-0 ${
                           ann.type === 'alert'
-                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                            ? 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300'
                             : ann.type === 'promo'
-                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                            : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                            ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
+                            : 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'
                         }`}
                       >
                         {ann.type === 'alert' ? t('alertUrgent') : ann.type === 'promo' ? t('specialOffer') : t('infoNotice')}
                       </span>
-                      <span className="font-semibold text-white/90 break-words flex-1">{ann.text}</span>
+                      <span className="font-extrabold text-slate-800 dark:text-slate-100 break-words flex-1">{ann.text}</span>
                     </div>
 
-                    <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
-                      <span className="text-[10px] text-white/40 mr-1">
+                    <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200 dark:border-slate-700/60">
+                      <span className="text-[10px] text-slate-400 mr-1">
                         {new Date(ann.createdAt).toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}
                       </span>
 
@@ -282,10 +282,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <button
                           type="button"
                           onClick={() => startEditTicker(ann)}
-                          className="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 border border-cyan-500/20 hover:border-cyan-500/40 font-mono text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all"
+                          className="clay-btn clay-btn-ghost px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5"
                           title={t('editTicker')}
                         >
-                          <Pencil className="w-3.5 h-3.5" />
+                          <Pencil className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
                           <span>{t('editTicker')}</span>
                         </button>
                       )}
@@ -295,7 +295,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                           type="button"
                           onClick={() => handleDeleteTicker(ann.id, ann.text)}
                           disabled={isDeleting}
-                          className="px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 hover:border-red-500/40 font-mono text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all disabled:opacity-50"
+                          className="clay-btn clay-btn-ghost text-red-600 dark:text-red-400 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 disabled:opacity-50"
                           title={t('deleteTicker')}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -311,62 +311,62 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         {/* Section: QES Ford Autoparts Workshop Information & Operating Hours */}
-        <div className="bg-[#282a2c] border border-cyan-500/30 rounded-xl p-6 shadow-2xl space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+        <div className="clay-card p-6 space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-700/60 pb-4">
             <QESFordLogo size="lg" />
-            <div className="bg-cyan-500/10 border border-cyan-500/30 px-4 py-2 rounded-xl text-right">
-              <span className="text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-widest block">TELEFON / WHATSAPP</span>
-              <span className="text-lg font-mono font-black text-white flex items-center justify-end gap-1.5">
-                <Phone className="w-4 h-4 text-cyan-400" /> 011-3786 6127
+            <div className="clay-card-blue px-4 py-2 text-right">
+              <span className="text-[10px] font-mono text-blue-800 dark:text-blue-200 font-extrabold uppercase tracking-widest block">TELEFON / WHATSAPP</span>
+              <span className="text-lg font-mono font-black text-slate-900 dark:text-white flex items-center justify-end gap-1.5">
+                <Phone className="w-4 h-4 text-blue-600 dark:text-cyan-400" /> 011-3786 6127
               </span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono text-xs">
             {/* Waktu Operasi */}
-            <div className="bg-[#242628] border border-white/10 p-4 rounded-xl space-y-3">
-              <div className="flex items-center gap-2 text-cyan-400 font-bold uppercase tracking-wider text-sm border-b border-white/10 pb-2">
+            <div className="clay-inset p-4 space-y-3">
+              <div className="flex items-center gap-2 text-blue-600 dark:text-cyan-400 font-black uppercase tracking-wider text-sm border-b border-slate-200 dark:border-slate-700/60 pb-2">
                 <Clock className="w-4 h-4" />
                 <span>Waktu Operasi</span>
               </div>
-              <div className="space-y-2 text-white/90">
-                <div className="flex justify-between items-center py-1 border-b border-white/5">
-                  <span className="text-white/60">ISNIN - JUMAAT</span>
-                  <span className="font-bold text-amber-300">8.30 PAGI - 5.30 PETANG</span>
+              <div className="space-y-2 text-slate-700 dark:text-slate-200">
+                <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-700/40">
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">ISNIN - JUMAAT</span>
+                  <span className="font-extrabold text-amber-600 dark:text-amber-300">8.30 PAGI - 5.30 PETANG</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-white/5">
-                  <span className="text-white/60">SABTU</span>
-                  <span className="font-bold text-amber-300">8.30 PAGI - 2.30 PETANG</span>
+                <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-700/40">
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">SABTU</span>
+                  <span className="font-extrabold text-amber-600 dark:text-amber-300">8.30 PAGI - 2.30 PETANG</span>
                 </div>
                 <div className="flex justify-between items-center py-1">
-                  <span className="text-white/60">AHAD & CUTI UMUM</span>
-                  <span className="font-bold text-red-400 uppercase">TUTUP</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">AHAD & CUTI UMUM</span>
+                  <span className="font-extrabold text-red-500 uppercase">TUTUP</span>
                 </div>
               </div>
             </div>
 
             {/* Waktu Rehat & Lokasi */}
-            <div className="bg-[#242628] border border-white/10 p-4 rounded-xl space-y-3">
-              <div className="flex items-center gap-2 text-orange-400 font-bold uppercase tracking-wider text-sm border-b border-white/10 pb-2">
+            <div className="clay-inset p-4 space-y-3">
+              <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 font-black uppercase tracking-wider text-sm border-b border-slate-200 dark:border-slate-700/60 pb-2">
                 <Coffee className="w-4 h-4" />
                 <span>Waktu Rehat</span>
               </div>
-              <div className="space-y-2 text-white/90">
-                <div className="flex justify-between items-center py-1 border-b border-white/5">
-                  <span className="text-white/60">ISNIN - SABTU</span>
-                  <span className="font-bold text-orange-300">1.00 TGH HARI - 2.00 PETANG</span>
+              <div className="space-y-2 text-slate-700 dark:text-slate-200">
+                <div className="flex justify-between items-center py-1 border-b border-slate-200/60 dark:border-slate-700/40">
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">ISNIN - SABTU</span>
+                  <span className="font-extrabold text-orange-600 dark:text-orange-300">1.00 TGH HARI - 2.00 PETANG</span>
                 </div>
                 <div className="flex justify-between items-center py-1">
-                  <span className="text-white/60">JUMAAT</span>
-                  <span className="font-bold text-orange-300">12.30 TGH HARI - 2.30 PETANG</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">JUMAAT</span>
+                  <span className="font-extrabold text-orange-600 dark:text-orange-300">12.30 TGH HARI - 2.30 PETANG</span>
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-white/10 text-white/70 space-y-1">
-                <div className="text-[10px] uppercase font-bold text-cyan-400 tracking-wider flex items-center gap-1">
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-700/60 space-y-1">
+                <div className="text-[10px] uppercase font-black text-blue-600 dark:text-cyan-400 tracking-wider flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5" /> ALAMAT BENGKEL:
                 </div>
-                <p className="text-white text-[11px] leading-snug">
+                <p className="text-slate-800 dark:text-slate-100 text-[11px] leading-snug font-semibold">
                   19, Jalan Impian Putra 1/4, Taman Impian Putra, Bandar Seri Putra, 43000 Kajang, Selangor
                 </p>
               </div>
@@ -375,23 +375,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         {/* Section 2: Technician Roster */}
-        <div className="bg-[#282a2c] border border-white/10 rounded-xl p-6 shadow-2xl space-y-4">
-          <div className="flex items-center gap-2 text-cyan-400">
+        <div className="clay-card p-6 space-y-4">
+          <div className="flex items-center gap-2 text-blue-600 dark:text-cyan-400">
             <Wrench className="w-5 h-5 font-bold" />
-            <h3 className="font-mono font-bold text-base tracking-widest uppercase text-white">
+            <h3 className="font-mono font-black text-base tracking-wider uppercase text-slate-900 dark:text-white">
               {t('workshopTechniciansRoster')}
             </h3>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {mechanics.map((m) => (
-              <div key={m.id} className="bg-[#242628] border border-white/10 p-4 rounded-xl flex items-center gap-3">
-                <img src={m.avatarUrl} alt={m.name} className="w-12 h-12 rounded-full object-cover border border-white/10 bg-slate-900" />
+              <div key={m.id} className="clay-card p-4 flex items-center gap-3 transition-transform hover:-translate-y-0.5">
+                <img src={m.avatarUrl} alt={m.name} className="w-12 h-12 rounded-2xl object-cover border-2 border-white/80 shadow-md bg-slate-200 dark:bg-slate-800" />
                 <div>
-                  <h4 className="font-bold text-xs text-white">{m.name}</h4>
-                  <p className="text-[11px] text-cyan-400 font-mono">{m.specialty}</p>
-                  <p className="text-[10px] text-white/40 mt-1 font-mono">
-                    {t('activeJobs')} <span className="font-bold text-white">{m.activeJobsCount}</span>
+                  <h4 className="font-extrabold text-xs text-slate-900 dark:text-white">{m.name}</h4>
+                  <p className="text-[11px] text-blue-600 dark:text-cyan-400 font-mono font-bold">{m.specialty}</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
+                    {t('activeJobs')} <span className="font-black text-slate-800 dark:text-white">{m.activeJobsCount}</span>
                   </p>
                 </div>
               </div>
@@ -400,16 +400,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         {/* Section 3: System Architecture & Optimization Note */}
-        <div className="bg-[#282a2c] border border-white/10 rounded-xl p-6 shadow-2xl space-y-4 font-mono">
-          <div className="flex items-center gap-2 text-emerald-400">
+        <div className="clay-card p-6 space-y-4 font-mono">
+          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
             <Database className="w-5 h-5 font-bold" />
-            <h3 className="font-bold text-base tracking-widest uppercase text-white">
+            <h3 className="font-black text-base tracking-wider uppercase text-slate-900 dark:text-white">
               {t('architectureDatabaseOptimization')}
             </h3>
           </div>
 
-          <div className="bg-[#242628] border border-white/10 p-4 rounded-xl text-xs space-y-2 text-white/70 leading-relaxed">
-            <div className="flex items-center gap-2 text-cyan-400 font-bold mb-1">
+          <div className="clay-inset p-4 text-xs space-y-2 text-slate-700 dark:text-slate-300 leading-relaxed">
+            <div className="flex items-center gap-2 text-blue-600 dark:text-cyan-400 font-bold mb-1">
               <Info className="w-4 h-4" />
               <span>Spesifikasi Cermin Asal (Surau Display System):</span>
             </div>
@@ -425,21 +425,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
 
           {/* Reset Demo Data Button */}
-          <div className="pt-2 flex items-center justify-between border-t border-white/10">
+          <div className="pt-2 flex items-center justify-between border-t border-slate-200 dark:border-slate-700/60">
             <div>
-              <p className="text-xs font-bold text-white">{t('resetWorkshopQueue')}</p>
-              <p className="text-[11px] text-white/40">{t('restoresInitialSampleData')}</p>
+              <p className="text-xs font-extrabold text-slate-900 dark:text-white">{t('resetWorkshopQueue')}</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('restoresInitialSampleData')}</p>
             </div>
             <button
               onClick={handleReset}
-              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-mono font-bold text-xs flex items-center gap-1.5 border border-white/10"
+              className="clay-btn clay-btn-ghost text-xs font-bold gap-1.5"
             >
               <RefreshCw className="w-4 h-4" /> {t('resetSampleDataBtn')}
             </button>
           </div>
 
           {resetDoneMsg && (
-            <div className="bg-emerald-950/60 border border-emerald-500/40 p-3 rounded-xl text-emerald-300 text-xs font-bold">
+            <div className="bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-500/40 p-3 rounded-2xl text-emerald-800 dark:text-emerald-300 text-xs font-bold shadow-sm">
               {resetDoneMsg}
             </div>
           )}

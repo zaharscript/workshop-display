@@ -1,10 +1,284 @@
 @import "tailwindcss";
 
-body {
-  background-color: #353839;
-  color: #e2e8f0;
+:root {
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-body: 'Lora', 'Plus Jakarta Sans', system-ui, -apple-system, serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
+body {
+  font-family: var(--font-body);
+  background-color: #f7f3ea;
+  background-image: 
+    radial-gradient(rgba(196, 92, 61, 0.03) 1px, transparent 0),
+    radial-gradient(rgba(28, 56, 47, 0.04) 1px, #f7f3ea 1px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+  color: #24332c;
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.theme-dark {
+  background-color: #12211b;
+  background-image: 
+    radial-gradient(rgba(200, 148, 69, 0.04) 1px, transparent 0),
+    radial-gradient(rgba(255, 255, 255, 0.03) 1px, #12211b 1px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+  color: #f6f2e9;
+}
+
+/* Typography Utility Classes */
+.font-serif-display {
+  font-family: var(--font-serif);
+}
+
+.font-editorial {
+  font-family: var(--font-serif);
+  letter-spacing: -0.015em;
+}
+
+/* ==========================================================================
+   BOTANICAL CRAFTSMAN / STORYBOOK ARTISAN UTILITY CLASSES
+   Inspired by Juniper Finch: Warm Parchment, Forest Green, Terracotta & Ochre
+   ========================================================================== */
+
+/* Standard Light Artisan Parchment Card */
+.clay-card {
+  background: #fffdf9;
+  border-radius: 1.5rem;
+  border: 1.5px solid #e7decb;
+  box-shadow:
+    0 4px 18px -2px rgba(48, 38, 25, 0.07),
+    0 1px 3px 0 rgba(48, 38, 25, 0.04);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+body.theme-dark .clay-card {
+  background: #192d24;
+  border: 1.5px solid rgba(220, 235, 225, 0.12);
+  box-shadow:
+    0 6px 24px -4px rgba(4, 12, 9, 0.6),
+    0 2px 6px 0 rgba(4, 12, 9, 0.4);
+}
+
+/* Sage / Forest Calm Card (Incoming Intake Column) */
+.clay-card-blue {
+  background: #f3f7f4;
+  border-radius: 1.5rem;
+  border: 1.5px solid #d4e3d9;
+  box-shadow:
+    0 4px 18px -2px rgba(28, 56, 47, 0.08),
+    0 1px 3px 0 rgba(28, 56, 47, 0.04);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+
+body.theme-dark .clay-card-blue {
+  background: #172b22;
+  border: 1.5px solid rgba(110, 168, 140, 0.25);
+  box-shadow:
+    0 6px 24px -4px rgba(4, 12, 9, 0.6),
+    0 2px 6px 0 rgba(4, 12, 9, 0.4);
+}
+
+/* Warm Terracotta / Burnt Sienna Card (In Progress Column) */
+.clay-card-orange {
+  background: #fdf5f0;
+  border-radius: 1.5rem;
+  border: 1.5px solid #ebd4c7;
+  box-shadow:
+    0 4px 18px -2px rgba(193, 89, 60, 0.1),
+    0 1px 3px 0 rgba(193, 89, 60, 0.05);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+
+body.theme-dark .clay-card-orange {
+  background: #2a1f1a;
+  border: 1.5px solid rgba(220, 120, 85, 0.28);
+  box-shadow:
+    0 6px 24px -4px rgba(15, 6, 3, 0.7),
+    0 2px 6px 0 rgba(15, 6, 3, 0.4);
+}
+
+/* Golden Ochre / Forest Olive Card (Completed Column) */
+.clay-card-green {
+  background: #faf6eb;
+  border-radius: 1.5rem;
+  border: 1.5px solid #e7ddc4;
+  box-shadow:
+    0 4px 18px -2px rgba(200, 148, 69, 0.1),
+    0 1px 3px 0 rgba(200, 148, 69, 0.05);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+
+body.theme-dark .clay-card-green {
+  background: #242b1f;
+  border: 1.5px solid rgba(205, 175, 95, 0.28);
+  box-shadow:
+    0 6px 24px -4px rgba(8, 12, 6, 0.7),
+    0 2px 6px 0 rgba(8, 12, 6, 0.4);
+}
+
+/* Deep Botanical Card */
+.card-forest-deep {
+  background: #1c382f;
+  color: #fbf8f2;
+  border-radius: 1.5rem;
+  border: 1.5px solid #2d5547;
+  box-shadow: 0 8px 24px -4px rgba(12, 28, 23, 0.25);
+}
+
+/* Recessed Inset (for inputs, tracks, wells) */
+.clay-inset {
+  background: #efe9dc;
+  border-radius: 1rem;
+  border: 1.5px solid #dfd5c2;
+  box-shadow:
+    inset 0 2px 4px rgba(45, 35, 20, 0.08);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.theme-dark .clay-inset {
+  background: #101c17;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+/* Artisan Pills / Badges */
+.clay-pill {
+  border-radius: 9999px;
+  border: 1px solid rgba(40, 30, 15, 0.1);
+  box-shadow: 0 1px 3px rgba(35, 25, 15, 0.06);
+}
+
+body.theme-dark .clay-pill {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Button Base with tactile hover */
+.clay-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease, background 0.15s ease, filter 0.15s ease;
+}
+
+.clay-btn:hover {
+  transform: translateY(-1.5px);
+  filter: brightness(1.03);
+}
+
+.clay-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Primary Action Button: Warm Terracotta / Burnt Sienna (like Juniper Finch "Let's Create Something Wonderful") */
+.clay-btn-primary {
+  background: linear-gradient(135deg, #c45c3d 0%, #ad4a2d 100%);
+  color: #fffdf9;
+  border: 1.5px solid #d9785c;
+  box-shadow:
+    0 4px 14px -1px rgba(180, 75, 45, 0.38),
+    0 1px 3px rgba(180, 75, 45, 0.2);
+}
+
+.clay-btn-primary:active {
+  box-shadow: 0 1px 3px rgba(120, 45, 25, 0.5);
+}
+
+/* Forest Green Button (like "Ways We Can Create Together" badge) */
+.clay-btn-forest {
+  background: linear-gradient(135deg, #24463b 0%, #1a352c 100%);
+  color: #fffdf9;
+  border: 1.5px solid #3d6f5f;
+  box-shadow:
+    0 4px 14px -1px rgba(26, 53, 44, 0.35),
+    0 1px 3px rgba(26, 53, 44, 0.2);
+}
+
+/* Terracotta / Rust Button */
+.clay-btn-orange {
+  background: linear-gradient(135deg, #c45c3d 0%, #ad4a2d 100%);
+  color: #ffffff;
+  border: 1.5px solid #d9785c;
+  box-shadow:
+    0 4px 14px -1px rgba(180, 75, 45, 0.35);
+}
+
+/* Golden Ochre Button / Green Success */
+.clay-btn-green {
+  background: linear-gradient(135deg, #27614d 0%, #1c4b3b 100%);
+  color: #ffffff;
+  border: 1.5px solid #3c826b;
+  box-shadow:
+    0 4px 14px -1px rgba(28, 75, 59, 0.35);
+}
+
+/* Rose / Danger Button */
+.clay-btn-rose {
+  background: linear-gradient(135deg, #b94235 0%, #9e3226 100%);
+  color: #ffffff;
+  border: 1.5px solid #d4594c;
+  box-shadow:
+    0 4px 14px -1px rgba(160, 50, 40, 0.35);
+}
+
+/* Neutral Parchment Button */
+.clay-btn-neutral {
+  background: #fbf8f2;
+  color: #2c3e35;
+  border: 1.5px solid #dfd4c1;
+  box-shadow:
+    0 2px 8px -1px rgba(45, 35, 20, 0.08);
+}
+
+body.theme-dark .clay-btn-neutral {
+  background: #1c3228;
+  color: #f4efe4;
+  border: 1.5px solid rgba(220, 235, 225, 0.15);
+  box-shadow:
+    0 2px 8px -1px rgba(0, 0, 0, 0.5);
+}
+
+.clay-btn-ghost {
+  background: transparent;
+  color: #3b4d44;
+  border: 1.5px solid transparent;
+}
+
+body.theme-dark .clay-btn-ghost {
+  color: #e5ded2;
+}
+
+.clay-btn-ghost:hover {
+  background: rgba(45, 60, 50, 0.08);
+  border-color: rgba(45, 60, 50, 0.12);
+}
+
+body.theme-dark .clay-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Botanical Decorative Sprig Divider */
+.botanical-flourish {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #c45c3d;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+/* Animations */
 @keyframes marquee {
   0% {
     transform: translateX(0%);
@@ -15,22 +289,37 @@ body {
 }
 
 .animate-marquee {
-  animation: marquee 28s linear infinite;
+  animation: marquee 30s linear infinite;
 }
 
-/* Custom TV Widescreen Scrollbars */
+/* Warm Craft Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
-  background: #82868e;
+  background: #efe8db;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #7a7b7d;
-  border-radius: 4px;
+  background: #c9bea9;
+  border-radius: 9999px;
+  border: 1px solid #efe8db;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #f59e0b;
+  background: #c45c3d;
 }
+
+body.theme-dark ::-webkit-scrollbar-track {
+  background: #101c17;
+}
+body.theme-dark ::-webkit-scrollbar-thumb {
+  background: #254437;
+  border: 1px solid #101c17;
+}
+body.theme-dark ::-webkit-scrollbar-thumb:hover {
+  background: #cca158;
+}
+
+
 
