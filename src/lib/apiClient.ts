@@ -1,4 +1,5 @@
 import { VehicleRecord, Mechanic, Announcement, ActivityLog } from '../types';
+import { auth } from './firebase';
 
 export interface AppStateData {
   vehicles: VehicleRecord[];
@@ -9,6 +10,29 @@ export interface AppStateData {
 
 const LOCAL_STORAGE_KEY = 'workshop_display_data_v1';
 const BROADCAST_CHANNEL_NAME = 'workshop_display_channel';
+
+async function authenticatedFetch(
+  input: RequestInfo | URL,
+  init: RequestInit = {}
+): Promise<Response> {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('An active operator session is required for this action.');
+  }
+
+  const token = await user.getIdToken();
+  const headers = new Headers(init.headers);
+  headers.set('Authorization', `Bearer ${token}`);
+  return fetch(input, { ...init, headers });
+}
+
+async function readApiError(response: Response, fallback: string): Promise<Error> {
+  const body: unknown = await response.json();
+  if (body && typeof body === 'object' && 'error' in body && typeof body.error === 'string') {
+    return new Error(body.error);
+  }
+  return new Error(fallback);
+}
 
 // Create cross-tab BroadcastChannel
 let broadcastChannel: BroadcastChannel | null = null;
@@ -60,14 +84,13 @@ export const apiClient = {
 
   async addVehicle(payload: Partial<VehicleRecord>): Promise<{ vehicle: VehicleRecord; log: ActivityLog }> {
     try {
-      const res = await fetch('/api/vehicles', {
+      const res = await authenticatedFetch('/api/vehicles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to add vehicle');
+        throw await readApiError(res, 'Failed to add vehicle');
       }
       const data = await res.json();
       this.broadcastLocalMessage('VEHICLE_CREATED', data);
@@ -80,14 +103,13 @@ export const apiClient = {
 
   async updateVehicle(id: string, updates: Partial<VehicleRecord>): Promise<{ vehicle: VehicleRecord; log: ActivityLog }> {
     try {
-      const res = await fetch(`/api/vehicles/${id}`, {
+      const res = await authenticatedFetch(`/api/vehicles/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to update vehicle');
+        throw await readApiError(res, 'Failed to update vehicle');
       }
       const data = await res.json();
       this.broadcastLocalMessage('VEHICLE_UPDATED', data);
@@ -100,8 +122,8 @@ export const apiClient = {
 
   async deleteVehicle(id: string): Promise<{ success: boolean; vehicleId: string }> {
     try {
-      const res = await fetch(`/api/vehicles/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete vehicle');
+      const res = await authenticatedFetch(`/api/vehicles/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw await readApiError(res, 'Failed to delete vehicle');
       const data = await res.json();
       this.broadcastLocalMessage('VEHICLE_DELETED', data);
       return data;
@@ -113,12 +135,12 @@ export const apiClient = {
 
   async addAnnouncement(text: string, type: 'info' | 'alert' | 'promo' = 'info'): Promise<{ announcement: Announcement }> {
     try {
-      const res = await fetch('/api/announcements', {
+      const res = await authenticatedFetch('/api/announcements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, type }),
       });
-      if (!res.ok) throw new Error('Failed to add announcement');
+      if (!res.ok) throw await readApiError(res, 'Failed to add announcement');
       const data = await res.json();
       this.broadcastLocalMessage('ANNOUNCEMENT_ADDED', data);
       return data;
@@ -130,10 +152,10 @@ export const apiClient = {
 
   async deleteAnnouncement(id: string): Promise<{ success: boolean; announcementId: string }> {
     try {
-      const res = await fetch(`/api/announcements/${id}`, {
+      const res = await authenticatedFetch(`/api/announcements/${id}`, {
         method: 'DELETE',
       });
-      if (!res.ok) throw new Error('Failed to delete announcement');
+      if (!res.ok) throw await readApiError(res, 'Failed to delete announcement');
       const data = await res.json();
       this.broadcastLocalMessage('ANNOUNCEMENT_DELETED', data);
       return data;
@@ -148,28 +170,17 @@ export const apiClient = {
     updates: { text?: string; type?: 'info' | 'alert' | 'promo'; active?: boolean }
   ): Promise<{ announcement: Announcement }> {
     try {
-      const res = await fetch(`/api/announcements/${id}`, {
+      const res = await authenticatedFetch(`/api/announcements/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
-      if (!res.ok) throw new Error('Failed to update announcement');
+      if (!res.ok) throw await readApiError(res, 'Failed to update announcement');
       const data = await res.json();
       this.broadcastLocalMessage('ANNOUNCEMENT_UPDATED', data);
       return data;
     } catch (err) {
       console.error('API updateAnnouncement error:', err);
-      throw err;
-    }
-  },
-
-  async resetData(): Promise<void> {
-    try {
-      const res = await fetch('/api/reset', { method: 'POST' });
-      if (!res.ok) throw new Error('Failed to reset data');
-      this.broadcastLocalMessage('DATA_RESET', {});
-    } catch (err) {
-      console.error('API resetData error:', err);
       throw err;
     }
   },

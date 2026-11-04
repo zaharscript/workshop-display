@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ViewMode } from './types';
 import { useRealtimeQueue } from './lib/useRealtimeQueue';
+import { useAuth } from './lib/useAuth';
 import { HeaderNav } from './components/HeaderNav';
 import { TVDisplayView } from './components/TVDisplayView';
 import { MobileOperatorView } from './components/MobileOperatorView';
@@ -8,6 +9,7 @@ import { SettingsView } from './components/SettingsView';
 import { Loader2 } from 'lucide-react';
 
 export default function App() {
+  const { isAdmin } = useAuth();
   const [overrideSettings, setOverrideSettings] = useState<boolean>(false);
   const [forcedView, setForcedView] = useState<'tv' | 'mobile' | null>(null);
   const [isLargeScreen, setIsLargeScreen] = useState<boolean>(() => {
@@ -58,7 +60,6 @@ export default function App() {
     addAnnouncement,
     deleteAnnouncement,
     updateAnnouncement,
-    resetData,
   } = useRealtimeQueue();
 
   // Detect standalone URL parameter (e.g. ?view=tv, ?view=mobile, or ?view=settings)
@@ -86,6 +87,8 @@ export default function App() {
 
   const handleViewChange = (view: ViewMode) => {
     if (view === 'settings') {
+      // Only admin may access the Settings view
+      if (!isAdmin) return;
       setOverrideSettings((prev) => !prev);
     } else {
       setOverrideSettings(false);
@@ -116,8 +119,8 @@ export default function App() {
         incomingCount={incomingCount}
         inProgressCount={inProgressCount}
         completedCount={completedCount}
-        onResetData={resetData}
         isLargeScreen={isLargeScreen}
+        isAdmin={isAdmin}
       />
 
       {/* Main View Router */}
@@ -139,18 +142,16 @@ export default function App() {
             onUpdateStatus={updateVehicleStatus}
             onUpdateRecord={updateVehicleRecord}
             onDeleteVehicle={deleteVehicle}
-            onResetData={resetData}
           />
         )}
 
-        {currentView === 'settings' && (
+        {currentView === 'settings' && isAdmin && (
           <SettingsView
             announcements={announcements}
             mechanics={mechanics}
             onAddAnnouncement={addAnnouncement}
             onUpdateAnnouncement={updateAnnouncement}
             onDeleteAnnouncement={deleteAnnouncement}
-            onResetData={resetData}
           />
         )}
       </main>

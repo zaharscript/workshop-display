@@ -77,8 +77,6 @@ export function useRealtimeQueue() {
             }
           } else if (payload.type === 'ANNOUNCEMENTS_UPDATED') {
             setAnnouncements(payload.data.announcements || []);
-          } else if (payload.type === 'DATA_RESET') {
-            refreshData();
           }
         } catch (e) {
           console.warn('SSE message parse error:', e);
@@ -101,8 +99,7 @@ export function useRealtimeQueue() {
         msg.type === 'VEHICLE_DELETED' ||
         msg.type === 'ANNOUNCEMENT_ADDED' ||
         msg.type === 'ANNOUNCEMENT_UPDATED' ||
-        msg.type === 'ANNOUNCEMENT_DELETED' ||
-        msg.type === 'DATA_RESET'
+        msg.type === 'ANNOUNCEMENT_DELETED'
       ) {
         refreshData();
       }
@@ -152,10 +149,6 @@ export function useRealtimeQueue() {
     return await apiClient.updateAnnouncement(id, updates);
   };
 
-  const resetData = async () => {
-    return await apiClient.resetData();
-  };
-
   // Compute Workshop Stats
   const stats: WorkshopStats = {
     totalToday: vehicles.length,
@@ -185,7 +178,6 @@ export function useRealtimeQueue() {
     addAnnouncement,
     deleteAnnouncement,
     updateAnnouncement,
-    resetData,
     refreshData,
   };
 }

@@ -16,9 +16,16 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  LogIn,
+  LogOut,
+  Lock,
+  ShieldCheck,
 } from 'lucide-react';
 import { NewVehicleModal } from './NewVehicleModal';
 import { VehicleDetailModal } from './VehicleDetailModal';
+import { OperatorLoginModal } from './OperatorLoginModal';
+import { useAuth } from '../lib/useAuth';
+import { hasOperatorPermission } from '../lib/operatorAccess';
 import {
   calculateServiceProgress,
   toggleTaskInList,
@@ -36,7 +43,6 @@ interface MobileOperatorViewProps {
   onUpdateStatus: (id: string, newStatus: VehicleStatus) => Promise<void>;
   onUpdateRecord: (id: string, updates: Partial<VehicleRecord>) => Promise<void>;
   onDeleteVehicle: (id: string) => Promise<void>;
-  onResetData: () => void;
 }
 
 export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
@@ -48,9 +54,17 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
   onUpdateRecord,
   onDeleteVehicle,
 }) => {
+  const { isOperator, operatorProfile, user, logout } = useAuth();
+  const operatorRole = isOperator ? operatorProfile?.role ?? null : null;
+  const canRegisterVehicles = hasOperatorPermission(operatorRole, 'registerVehicles');
+  const canAssignMechanics = hasOperatorPermission(operatorRole, 'assignMechanics');
+  const canUpdateServiceProgress = hasOperatorPermission(operatorRole, 'updateServiceProgress');
+  const canUpdateTaskChecklist = hasOperatorPermission(operatorRole, 'updateTaskChecklist');
+  const canDeleteVehicleRecords = hasOperatorPermission(operatorRole, 'deleteVehicleRecords');
   const [activeTab, setActiveTab] = useState<VehicleStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [selectedVehicleForDetail, setSelectedVehicleForDetail] = useState<VehicleRecord | null>(null);
   const [showLogs, setShowLogs] = useState(false);
   const [addingTaskId, setAddingTaskId] = useState<string | null>(null);
@@ -66,6 +80,8 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
 
   const handleToggleTask = async (veh: VehicleRecord, taskId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!canUpdateTaskChecklist) return;
+
     const currentTasks = veh.tasks && veh.tasks.length > 0
       ? veh.tasks
       : getDefaultTasksForService(veh.serviceType);
@@ -84,7 +100,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
   };
 
   const handleAddNewTask = async (veh: VehicleRecord) => {
-    if (!newTaskTitle.trim()) return;
+    if (!canUpdateTaskChecklist || !newTaskTitle.trim()) return;
     const currentTasks = veh.tasks && veh.tasks.length > 0
       ? veh.tasks
       : getDefaultTasksForService(veh.serviceType);
@@ -129,7 +145,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
             </h2>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={() => setShowLogs(!showLogs)}
               className={`clay-btn ${showLogs ? 'clay-btn-primary' : 'clay-btn-neutral'} text-xs font-serif font-semibold gap-1.5`}
@@ -138,15 +154,56 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
               <span>{t('log')} ({activityLogs.length})</span>
             </button>
 
-            <button
-              onClick={() => setIsNewModalOpen(true)}
-              className="clay-btn clay-btn-primary text-xs tracking-wide font-serif font-bold gap-2 shadow-sm"
-            >
-              <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>{t('intakeNewCar')}</span>
-            </button>
+            {isOperator ? (
+              <>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full clay-pill bg-[#1c382f]/10 dark:bg-[#1c382f]/40 text-[#1c382f] dark:text-[#a3c9bb] text-xs font-serif font-bold">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#2b7256]" />
+                  <span className="max-w-[140px] truncate">{operatorProfile?.name || user?.email}</span>
+                </div>
+                <button
+                  onClick={() => logout()}
+                  className="clay-btn clay-btn-neutral text-xs font-serif font-semibold gap-1.5 text-rose-700 dark:text-rose-400"
+                  title="Log Keluar"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Log Keluar</span>
+                </button>
+                <button
+                  onClick={() => setIsNewModalOpen(true)}
+                  className="clay-btn clay-btn-primary text-xs tracking-wide font-serif font-bold gap-2 shadow-sm"
+                >
+                  <Plus className="w-4 h-4 stroke-[2.5]" />
+                  <span>{t('intakeNewCar')}</span>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setIsLoginModalOpen(true)}
+                className="clay-btn clay-btn-primary text-xs tracking-wide font-serif font-bold gap-2 shadow-sm"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Log Masuk Operator</span>
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Read-Only Notice for Signed-Out Visitors */}
+        {!isOperator && (
+          <div className="clay-card p-3.5 bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>{t('readOnlyModeBanner')}</span>
+            </div>
+            <button
+              onClick={() => setIsLoginModalOpen(true)}
+              className="clay-btn clay-btn-primary text-xs font-serif font-bold px-3 py-1.5 self-start sm:self-auto shrink-0 flex items-center gap-1.5"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Log Masuk Sekarang</span>
+            </button>
+          </div>
+        )}
 
         {/* Search & Filter Bar */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -202,7 +259,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
               className={`px-3.5 py-1.5 rounded-full font-bold transition-all whitespace-nowrap ${
                 activeTab === 'completed'
                   ? 'clay-btn clay-btn-green shadow-sm text-white'
-                  : 'text-[#7d591b] dark:text-[#e4c281] hover:bg-[#cca152]/10'
+                  : 'text-[#2b7256] dark:text-[#8bd4b4] hover:bg-[#2b7256]/10'
               }`}
             >
               {t('readyStatus')} ({counts.completed})
@@ -212,8 +269,8 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
               onClick={() => setActiveTab('delivered')}
               className={`px-3.5 py-1.5 rounded-full font-bold transition-all whitespace-nowrap ${
                 activeTab === 'delivered'
-                  ? 'clay-btn clay-btn-neutral shadow-sm text-[#483d33]'
-                  : 'text-[#827466] dark:text-[#99ada2] hover:text-[#2d2218]'
+                  ? 'clay-btn clay-btn-neutral shadow-sm text-[#1c382f] dark:text-[#f4efe4]'
+                  : 'text-[#7a6a5b] dark:text-[#aabcb2] hover:bg-[#7a6a5b]/10'
               }`}
             >
               {t('deliveredStatus')} ({counts.delivered})
@@ -221,32 +278,37 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
           </div>
         </div>
 
-        {/* Activity Log Drawer Panel */}
+        {/* Activity Logs Drawer */}
         {showLogs && (
-          <div className="clay-card p-4 sm:p-5 space-y-3 font-mono">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700/60 pb-2">
-              <h3 className="text-xs font-black uppercase tracking-wider text-blue-600 dark:text-cyan-400 flex items-center gap-1.5">
-                <History className="w-4 h-4" /> {t('liveActivityAuditLog')}
+          <div className="clay-card p-5 border border-slate-300 dark:border-slate-700/80 animate-fade-in font-mono">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700/60 mb-4">
+              <h3 className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+                <History className="w-4 h-4 text-blue-600 dark:text-cyan-400" />
+                {t('liveActivityAuditLog')}
               </h3>
-              <button onClick={() => setShowLogs(false)} className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-white">
+              <button
+                onClick={() => setShowLogs(false)}
+                className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-white"
+              >
                 {t('closeLog')}
               </button>
             </div>
-            <div className="space-y-2 max-h-48 overflow-y-auto text-xs">
+            <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
               {activityLogs.length === 0 ? (
-                <p className="text-slate-400 text-center py-4">{t('noLogsYet')}</p>
+                <p className="text-xs text-slate-400 text-center py-4">{t('noLogsYet')}</p>
               ) : (
                 activityLogs.map((log) => (
-                  <div key={log.id} className="clay-inset flex items-center justify-between p-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="clay-pill bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 px-2 py-0.5 text-[10px] font-black">
-                        {log.plateNumber}
-                      </span>
-                      <span className="text-slate-800 dark:text-slate-200 font-semibold">{log.action}</span>
+                  <div
+                    key={log.id}
+                    className="clay-inset p-2.5 flex items-center justify-between text-xs"
+                  >
+                    <div>
+                      <span className="font-black text-blue-600 dark:text-cyan-400 mr-2">[{log.plateNumber}]</span>
+                      <span className="text-slate-700 dark:text-slate-200">{log.action}</span>
                     </div>
-                    <span className="text-[10px] text-slate-400">
-                      {new Date(log.timestamp).toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                    <div className="text-[10px] text-slate-400 shrink-0 ml-2">
+                      {new Date(log.timestamp).toLocaleTimeString('ms-MY')}
+                    </div>
                   </div>
                 ))
               )}
@@ -254,300 +316,198 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
           </div>
         )}
 
-        {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Vehicles Grid Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredVehicles.length === 0 ? (
-            <div className="col-span-full py-16 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 clay-card border-dashed p-10">
-              <Car className="w-12 h-12 mb-3 opacity-40 text-blue-500 dark:text-cyan-400" />
-              <p className="text-base font-bold text-slate-700 dark:text-slate-200">{t('noVehiclesFound')}</p>
-              <p className="text-xs text-slate-400">{t('adjustSearchOrIntake')}</p>
+            <div className="col-span-full clay-card p-12 text-center text-slate-400 font-mono">
+              <Car className="w-12 h-12 mx-auto mb-3 opacity-40 text-slate-500" />
+              <p className="text-base font-bold text-slate-700 dark:text-slate-300">{t('noVehiclesFound')}</p>
+              <p className="text-xs mt-1 text-slate-500">{t('adjustSearchOrIntake')}</p>
             </div>
           ) : (
             filteredVehicles.map((veh) => (
               <div
                 key={veh.id}
-                className={`clay-card p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 ${
-                  veh.status === 'completed'
-                    ? 'clay-card-green'
-                    : veh.status === 'in_progress'
-                    ? 'clay-card-orange'
-                    : ''
-                }`}
+                className="clay-card p-5 flex flex-col justify-between space-y-4 hover:-translate-y-1 transition-transform relative overflow-hidden"
               >
-                <div>
-                  {/* Top Header Row */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <button
-                      onClick={() => setSelectedVehicleForDetail(veh)}
-                      className="text-xl font-black tracking-tight text-slate-900 dark:text-white font-mono hover:text-blue-600 dark:hover:text-cyan-400 transition-colors"
-                    >
-                      {veh.plateNumber}
-                    </button>
-
-                    <div className="flex items-center gap-1.5 font-mono">
-                      {veh.priority === 'express' && (
-                        <span className="clay-pill bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 text-[10px] font-black px-2 py-0.5">
-                          {t('expressPriority')}
-                        </span>
-                      )}
-                      {veh.priority === 'vip' && (
-                        <span className="clay-pill bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-[10px] font-black px-2 py-0.5">
-                          {t('vipPriority')}
-                        </span>
-                      )}
-
-                      {/* Status Badge */}
-                      {veh.status === 'incoming' && (
-                        <span className="clay-pill bg-blue-500 text-white px-2.5 py-0.5 text-[10px] font-black uppercase">
-                          Masuk
-                        </span>
-                      )}
-                      {veh.status === 'in_progress' && (
-                        <span className="clay-pill bg-orange-500 text-white px-2.5 py-0.5 text-[10px] font-black uppercase flex items-center gap-1">
-                          <Wrench className="w-3 h-3 animate-spin" /> Pembaikan
-                        </span>
-                      )}
-                      {veh.status === 'completed' && (
-                        <span className="clay-pill bg-emerald-500 text-white px-2.5 py-0.5 text-[10px] font-black uppercase flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> Siap
-                        </span>
-                      )}
-                      {veh.status === 'delivered' && (
-                        <span className="clay-pill bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-0.5 text-[10px] font-black uppercase">
-                          Diserahkan
-                        </span>
-                      )}
-                    </div>
+                {/* Priority Ribbon */}
+                {veh.priority === 'express' && (
+                  <div className="absolute top-0 right-0 bg-amber-500 text-slate-950 text-[10px] font-black px-3 py-0.5 rounded-bl-xl font-mono uppercase shadow-sm">
+                    {t('expressPriority')}
                   </div>
+                )}
+                {veh.priority === 'vip' && (
+                  <div className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] font-black px-3 py-0.5 rounded-bl-xl font-mono uppercase shadow-sm">
+                    {t('vipPriority')}
+                  </div>
+                )}
 
-                  {/* Body Info */}
-                  <div className="flex gap-4 mb-4 items-center">
+                {/* Top Details & Photo */}
+                <div className="space-y-3 font-mono">
+                  <div className="flex items-start gap-3">
                     <img
                       src={veh.photoUrl}
                       alt={veh.plateNumber}
-                      className="w-24 h-20 object-cover rounded-2xl border-2 border-white/80 shadow-md bg-slate-200 dark:bg-slate-800 shrink-0"
+                      className="w-20 h-20 object-cover rounded-2xl border border-white/60 shadow-sm shrink-0 bg-slate-200 dark:bg-slate-800"
                     />
-
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-white truncate">
-                        {veh.vehicleMake} {veh.vehicleModel}
-                      </h4>
-                      <p className="text-xs text-blue-600 dark:text-cyan-400 font-bold truncate font-mono">{veh.serviceType}</p>
-
-                      <div className="text-[11px] text-slate-600 dark:text-slate-400 space-y-0.5 pt-1 font-mono">
-                        <p className="truncate flex items-center gap-1">
-                          <User className="w-3 h-3 text-slate-400" />
-                          {veh.ownerName}
-                        </p>
-                        {veh.ownerPhone && <p className="text-slate-400 text-[10px]">{veh.ownerPhone}</p>}
-                        <p className="text-slate-500 dark:text-slate-400 font-bold text-[10px]">
-                          {t('location')} {veh.bayNumber || 'Bay 01'}
-                        </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="clay-pill bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-black text-sm px-2.5 py-0.5 tracking-wider">
+                          {veh.plateNumber}
+                        </span>
                       </div>
+                      <h3 className="font-black text-slate-900 dark:text-white text-sm truncate">
+                        {veh.vehicleMake} {veh.vehicleModel}
+                      </h3>
+                      <p className="text-xs text-blue-600 dark:text-cyan-400 font-bold truncate mt-0.5">
+                        {veh.serviceType}
+                      </p>
+                      <p className="text-[11px] text-slate-500 truncate flex items-center gap-1 mt-1">
+                        <User className="w-3 h-3" /> {veh.ownerName}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Mechanic Line */}
-                  <div className="clay-inset p-2.5 mb-4 flex items-center justify-between text-xs font-mono">
-                    <span className="text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1">
-                      <Wrench className="w-3.5 h-3.5 text-blue-500 dark:text-cyan-400" /> {t('technician')}
+                  {/* Technician & Bay Tags */}
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <span className="clay-pill bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 text-[11px] font-bold">
+                      {veh.bayNumber || 'Bay 01'}
                     </span>
-                    <span className="font-extrabold text-slate-800 dark:text-white">{veh.mechanicName || t('unassigned')}</span>
+                    <span className="text-[11px] text-slate-500 flex items-center gap-1 font-semibold">
+                      <Wrench className="w-3 h-3 text-slate-400" />
+                      {veh.mechanicName || t('unassigned')}
+                    </span>
                   </div>
 
-                  {/* To-Do List & Progress Line Section */}
+                  {/* Task Progress & Checklist Section */}
                   {(() => {
-                    const tasks = veh.tasks && veh.tasks.length > 0 ? veh.tasks : getDefaultTasksForService(veh.serviceType);
+                    const tasks = veh.tasks && veh.tasks.length > 0
+                      ? veh.tasks
+                      : getDefaultTasksForService(veh.serviceType);
                     const progress = calculateServiceProgress(tasks, veh.status);
                     const theme = getProgressColorTheme(progress.percent);
-                    const isExpanded = !!expandedCards[veh.id];
-                    const isAdding = addingTaskId === veh.id;
-                    const visibleTasks = isExpanded ? tasks : tasks.slice(0, 3);
-                    const hasMore = tasks.length > 3;
+                    const isExpanded = expandedCards[veh.id] ?? false;
 
                     return (
-                      <div className="clay-inset p-3 mb-4 space-y-2.5 font-mono">
-                        {/* Header: Title + Progress Percentage Badge */}
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-white">
-                            <ListChecks className="w-4 h-4 text-blue-500 dark:text-cyan-400" />
-                            <span>Senarai Tugasan</span>
-                          </div>
+                      <div className="pt-2 border-t border-slate-200 dark:border-slate-700/60 space-y-2">
+                        {/* Progress Header */}
+                        <div
+                          onClick={() => toggleExpandCardTasks(veh.id)}
+                          className="flex items-center justify-between cursor-pointer select-none py-1 hover:opacity-80 transition-opacity"
+                        >
                           <div className="flex items-center gap-1.5">
+                            <ListChecks className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                              Tugasan ({progress.completedCount}/{progress.totalCount})
+                            </span>
+                            {progress.isAllCompleted && (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500/20" />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
                             <span
-                              className="clay-pill px-2.5 py-0.5 text-[11px] font-black flex items-center gap-1 transition-all duration-300"
-                              style={{
-                                background: theme.accentLight,
-                                color: theme.accentColor,
-                                border: `1px solid ${theme.accentBorder}`,
-                              }}
+                              className="text-xs font-black"
+                              style={{ color: theme.accentColor }}
                             >
-                              {progress.isAllCompleted ? (
-                                <>
-                                  <Check className="w-3.5 h-3.5 stroke-[3]" />
-                                  <span>100% SIAP</span>
-                                </>
-                              ) : (
-                                <>
-                                  <span>SIAP {progress.percent}%</span>
-                                  <span className="opacity-70 font-medium text-[10px]">({progress.completedCount}/{progress.totalCount})</span>
-                                </>
-                              )}
+                              {progress.percent}%
                             </span>
+                            {isExpanded ? (
+                              <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                            ) : (
+                              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                            )}
                           </div>
                         </div>
 
-                        {/* Progress Line (Animated Bar) */}
-                        <div className="space-y-1">
-                          <div className="w-full clay-inset h-2.5 p-0.5 overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-500 ease-out"
-                              style={{
-                                width: `${Math.max(progress.percent, 3)}%`,
-                                background: theme.progressBarGradient,
-                                boxShadow: theme.progressBarGlow,
-                              }}
-                            />
-                          </div>
-                          <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
-                            <span className="truncate max-w-[200px] font-medium">
-                              {progress.isAllCompleted
-                                ? '✨ Semua kerja disiapkan'
-                                : progress.activeTaskTitle
-                                ? `Sedang: ${progress.activeTaskTitle}`
-                                : 'Menunggu giliran mula'}
-                            </span>
-                            <span className="font-black shrink-0 ml-1" style={{ color: theme.accentColor }}>
-                              {progress.completedCount}/{progress.totalCount} Siap ({progress.percent}%)
-                            </span>
-                          </div>
+                        {/* Progress Bar Track */}
+                        <div className="w-full clay-inset h-2 p-0.5 overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-300 ease-out"
+                            style={{
+                              width: `${Math.max(progress.percent, 3)}%`,
+                              background: theme.progressBarGradient,
+                            }}
+                          />
                         </div>
 
-                        {/* Checklist Tasks */}
-                        <div className="space-y-1.5 pt-1">
-                          {visibleTasks.map((task) => (
-                            <div
-                              key={task.id}
-                              onClick={(e) => handleToggleTask(veh, task.id, e)}
-                              className={`flex items-start gap-2 p-2 rounded-xl cursor-pointer transition-all select-none ${
-                                task.completed
-                                  ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30'
-                                  : 'clay-card hover:translate-y-[-1px] text-slate-800 dark:text-slate-100'
-                              }`}
-                            >
+                        {/* Expandable Task Checklist */}
+                        {isExpanded && (
+                          <div className="pt-2 space-y-1.5 animate-fade-in font-mono">
+                            {tasks.map((task) => (
                               <div
-                                className={`mt-0.5 w-4 h-4 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
+                                key={task.id}
+                                onClick={(e) => handleToggleTask(veh, task.id, e)}
+                                className={`flex items-start gap-2 p-2 rounded-xl transition-all select-none ${
+                                  canUpdateTaskChecklist ? 'cursor-pointer' : 'cursor-default'
+                                } ${
                                   task.completed
-                                    ? 'bg-emerald-500 text-white shadow-sm'
-                                    : 'border-2 border-slate-300 dark:border-slate-600 bg-white/60 dark:bg-slate-800'
+                                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                    : 'clay-inset text-slate-700 dark:text-slate-300'
                                 }`}
                               >
-                                {task.completed && <Check className="w-3 h-3 stroke-[3]" />}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p
-                                  className={`text-xs leading-snug ${
-                                    task.completed ? 'line-through text-emerald-700 dark:text-emerald-300/70' : 'font-semibold'
+                                <div className="mt-0.5 shrink-0">
+                                  {task.completed ? (
+                                    <CheckSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                  ) : (
+                                    <div className="w-3.5 h-3.5 rounded border border-slate-400 dark:border-slate-500" />
+                                  )}
+                                </div>
+                                <span
+                                  className={`text-xs leading-tight flex-1 ${
+                                    task.completed ? 'line-through text-slate-400 dark:text-slate-500' : 'font-medium'
                                   }`}
                                 >
                                   {task.title}
-                                </p>
-                                {task.completed && task.completedAt && (
-                                  <span className="text-[9px] text-emerald-600 dark:text-emerald-400/70 block mt-0.5">
-                                    ✓ Siap {new Date(task.completedAt).toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}
-                                  </span>
-                                )}
+                                </span>
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
 
-                        {/* Expand / Collapse & Add Task Controls */}
-                        <div className="flex items-center justify-between pt-1 text-xs">
-                          {hasMore ? (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleExpandCardTasks(veh.id);
-                              }}
-                              className="text-[11px] text-blue-600 dark:text-cyan-400 hover:underline font-bold flex items-center gap-1 py-1"
-                            >
-                              {isExpanded ? (
-                                <>
-                                  <ChevronUp className="w-3.5 h-3.5" /> Ringkaskan ({tasks.length} tugasan)
-                                </>
+                            {/* Quick Add Custom Task (Operator Only) */}
+                            {canUpdateTaskChecklist && (
+                              addingTaskId === veh.id ? (
+                                <div className="flex gap-1 pt-1">
+                                  <input
+                                    type="text"
+                                    value={newTaskTitle}
+                                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleAddNewTask(veh);
+                                    }}
+                                    placeholder="Tugasan baharu..."
+                                    className="clay-inset px-2 py-1 text-xs flex-1 text-slate-900 dark:text-white"
+                                    autoFocus
+                                  />
+                                  <button
+                                    onClick={() => handleAddNewTask(veh)}
+                                    className="clay-btn clay-btn-primary px-2 text-xs font-bold"
+                                  >
+                                    Tambah
+                                  </button>
+                                  <button
+                                    onClick={() => setAddingTaskId(null)}
+                                    className="clay-btn clay-btn-ghost px-2 text-xs"
+                                  >
+                                    Batal
+                                  </button>
+                                </div>
                               ) : (
-                                <>
-                                  <ChevronDown className="w-3.5 h-3.5" /> Lihat {tasks.length - 3} lagi...
-                                </>
-                              )}
-                            </button>
-                          ) : (
-                            <span className="text-[10px] text-slate-400">{tasks.length} tugasan berdaftar</span>
-                          )}
-
-                          {!isAdding ? (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setAddingTaskId(veh.id);
-                                setNewTaskTitle('');
-                              }}
-                              className="clay-btn clay-btn-ghost text-[11px] px-2.5 py-1 gap-1"
-                            >
-                              <Plus className="w-3 h-3 text-blue-600 dark:text-cyan-400" /> Tambah Kerja
-                            </button>
-                          ) : null}
-                        </div>
-
-                        {/* Inline Add Task Form */}
-                        {isAdding && (
-                          <div
-                            onClick={(e) => e.stopPropagation()}
-                            className="clay-card p-2.5 space-y-2 mt-2"
-                          >
-                            <input
-                              type="text"
-                              value={newTaskTitle}
-                              onChange={(e) => setNewTaskTitle(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  handleAddNewTask(veh);
-                                }
-                              }}
-                              placeholder="Contoh: Skim disc rotor brek belakang..."
-                              className="clay-inset w-full px-2.5 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none"
-                              autoFocus
-                            />
-                            <div className="flex justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setAddingTaskId(null);
-                                  setNewTaskTitle('');
-                                }}
-                                className="clay-btn clay-btn-ghost px-2.5 py-1 text-[11px]"
-                              >
-                                Batal
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleAddNewTask(veh)}
-                                className="clay-btn clay-btn-primary px-3 py-1 text-[11px] font-bold flex items-center gap-1"
-                              >
-                                <Plus className="w-3 h-3" /> Simpan Tugasan
-                              </button>
-                            </div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setAddingTaskId(veh.id);
+                                  }}
+                                  className="w-full text-center py-1 text-[11px] text-blue-600 dark:text-cyan-400 font-bold hover:underline flex items-center justify-center gap-1"
+                                >
+                                  <Plus className="w-3 h-3" /> Tambah Tugasan Tersuai
+                                </button>
+                              )
+                            )}
                           </div>
                         )}
 
-                        {/* All Completed Notice */}
-                        {progress.isAllCompleted && veh.status !== 'completed' && veh.status !== 'delivered' && (
-                          <div className="bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-500/40 p-2 rounded-xl text-center text-xs text-emerald-800 dark:text-emerald-200 font-bold flex items-center justify-center gap-1.5 shadow-sm">
-                            <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-spin" />
+                        {progress.isAllCompleted && (
+                          <div className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-bold pt-1">
+                            <Sparkles className="w-3 h-3" />
                             <span>Semua tugas selesai! Sedia untuk ditandakan siap.</span>
                           </div>
                         )}
@@ -559,8 +519,8 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                 {/* Card Action Stage Buttons */}
                 <div className="pt-3 border-t border-slate-200 dark:border-slate-700/60 space-y-2 font-mono">
                   <div className="grid grid-cols-2 gap-2">
-                    {/* Action Stage Progress Button */}
-                    {veh.status === 'incoming' && (
+                    {/* Action Stage Progress Button (Operator Only) */}
+                    {canUpdateServiceProgress && veh.status === 'incoming' && (
                       <button
                         onClick={() => onUpdateStatus(veh.id, 'in_progress')}
                         className="col-span-2 clay-btn clay-btn-orange py-2 px-3 text-xs uppercase font-black flex items-center justify-center gap-1.5"
@@ -569,7 +529,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                       </button>
                     )}
 
-                    {veh.status === 'in_progress' && (
+                    {canUpdateServiceProgress && veh.status === 'in_progress' && (
                       <button
                         onClick={() => onUpdateStatus(veh.id, 'completed')}
                         className="col-span-2 clay-btn clay-btn-green py-2 px-3 text-xs uppercase font-black flex items-center justify-center gap-1.5"
@@ -578,7 +538,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                       </button>
                     )}
 
-                    {veh.status === 'completed' && (
+                    {canUpdateServiceProgress && veh.status === 'completed' && (
                       <button
                         onClick={() => onUpdateStatus(veh.id, 'delivered')}
                         className="col-span-2 clay-btn clay-btn-ghost py-2 px-3 text-xs uppercase font-extrabold flex items-center justify-center gap-1.5"
@@ -587,7 +547,7 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                       </button>
                     )}
 
-                    {veh.status === 'delivered' && (
+                    {canUpdateServiceProgress && veh.status === 'delivered' && (
                       <button
                         onClick={() => onUpdateStatus(veh.id, 'incoming')}
                         className="col-span-2 clay-btn clay-btn-ghost py-2 px-3 text-xs uppercase font-bold flex items-center justify-center gap-1.5"
@@ -601,7 +561,8 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
                       onClick={() => setSelectedVehicleForDetail(veh)}
                       className="col-span-2 clay-btn clay-btn-ghost py-2 px-3 text-xs font-bold flex items-center justify-center gap-1"
                     >
-                      <Eye className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" /> {t('editJobSheet')}
+                      <Eye className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
+                      {isOperator ? t('editJobSheet') : 'Lihat Butiran Kenderaan'}
                     </button>
                   </div>
                 </div>
@@ -612,12 +573,15 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
       </div>
 
       {/* Modals */}
-      <NewVehicleModal
-        isOpen={isNewModalOpen}
-        onClose={() => setIsNewModalOpen(false)}
-        onSubmit={onAddVehicle}
-        mechanics={mechanics}
-      />
+      {canRegisterVehicles && (
+        <NewVehicleModal
+          isOpen={isNewModalOpen}
+          onClose={() => setIsNewModalOpen(false)}
+          onSubmit={onAddVehicle}
+          mechanics={mechanics}
+          canAssignMechanic={canAssignMechanics}
+        />
+      )}
 
       <VehicleDetailModal
         vehicle={selectedVehicleForDetail}
@@ -627,6 +591,14 @@ export const MobileOperatorView: React.FC<MobileOperatorViewProps> = ({
         onUpdateRecord={onUpdateRecord}
         onDelete={onDeleteVehicle}
         mechanics={mechanics}
+        readOnly={!isOperator}
+        canAssignMechanic={canAssignMechanics}
+        canDeleteVehicle={canDeleteVehicleRecords}
+      />
+
+      <OperatorLoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
       />
     </div>
   );

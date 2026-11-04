@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Announcement, Mechanic } from '../types';
-import { Megaphone, Plus, Wrench, RefreshCw, Database, Info, Clock, Coffee, Phone, MapPin, Trash2, Pencil, Check, X } from 'lucide-react';
+import { Megaphone, Plus, Wrench, Database, Info, Clock, Coffee, Phone, MapPin, Trash2, Pencil, Check, X } from 'lucide-react';
 import { t } from '../lib/i18n';
 import { QESFordLogo } from './QESFordLogo';
 
@@ -13,7 +13,6 @@ interface SettingsViewProps {
     updates: { text?: string; type?: 'info' | 'alert' | 'promo'; active?: boolean }
   ) => Promise<any>;
   onDeleteAnnouncement?: (id: string) => Promise<any>;
-  onResetData: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -22,7 +21,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onAddAnnouncement,
   onUpdateAnnouncement,
   onDeleteAnnouncement,
-  onResetData,
 }) => {
   const [newTickerText, setNewTickerText] = useState('');
   const [tickerType, setTickerType] = useState<'info' | 'alert' | 'promo'>('info');
@@ -35,7 +33,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [editingType, setEditingType] = useState<'info' | 'alert' | 'promo'>('info');
   const [savingTicker, setSavingTicker] = useState(false);
 
-  const [resetDoneMsg, setResetDoneMsg] = useState('');
 
   const handleAddTicker = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,14 +91,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       console.error('Failed to delete ticker:', err);
     } finally {
       setDeletingTickerId(null);
-    }
-  };
-
-  const handleReset = async () => {
-    if (confirm('Adakah anda pasti mahu set semula giliran bengkel kepada data sampel asal?')) {
-      await onResetData();
-      setResetDoneMsg(t('queueResetSuccess'));
-      setTimeout(() => setResetDoneMsg(''), 4000);
     }
   };
 
@@ -383,20 +372,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {mechanics.map((m) => (
-              <div key={m.id} className="clay-card p-4 flex items-center gap-3 transition-transform hover:-translate-y-0.5">
-                <img src={m.avatarUrl} alt={m.name} className="w-12 h-12 rounded-2xl object-cover border-2 border-white/80 shadow-md bg-slate-200 dark:bg-slate-800" />
-                <div>
-                  <h4 className="font-extrabold text-xs text-slate-900 dark:text-white">{m.name}</h4>
-                  <p className="text-[11px] text-blue-600 dark:text-cyan-400 font-mono font-bold">{m.specialty}</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
-                    {t('activeJobs')} <span className="font-black text-slate-800 dark:text-white">{m.activeJobsCount}</span>
-                  </p>
+          {mechanics.length === 0 ? (
+            <p className="clay-inset p-5 text-center font-mono text-xs text-slate-400">
+              {t('noTechniciansAvailable')}
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {mechanics.map((m) => (
+                <div key={m.id} className="clay-card p-4 flex items-center gap-3 transition-transform hover:-translate-y-0.5">
+                  <img src={m.avatarUrl} alt={m.name} className="w-12 h-12 rounded-2xl object-cover border-2 border-white/80 shadow-md bg-slate-200 dark:bg-slate-800" />
+                  <div>
+                    <h4 className="font-extrabold text-xs text-slate-900 dark:text-white">{m.name}</h4>
+                    <p className="text-[11px] text-blue-600 dark:text-cyan-400 font-mono font-bold">{m.specialty}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
+                      {t('activeJobs')} <span className="font-black text-slate-800 dark:text-white">{m.activeJobsCount}</span>
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Section 3: System Architecture & Optimization Note */}
@@ -424,25 +419,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </p>
           </div>
 
-          {/* Reset Demo Data Button */}
-          <div className="pt-2 flex items-center justify-between border-t border-slate-200 dark:border-slate-700/60">
-            <div>
-              <p className="text-xs font-extrabold text-slate-900 dark:text-white">{t('resetWorkshopQueue')}</p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('restoresInitialSampleData')}</p>
-            </div>
-            <button
-              onClick={handleReset}
-              className="clay-btn clay-btn-ghost text-xs font-bold gap-1.5"
-            >
-              <RefreshCw className="w-4 h-4" /> {t('resetSampleDataBtn')}
-            </button>
-          </div>
-
-          {resetDoneMsg && (
-            <div className="bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-500/40 p-3 rounded-2xl text-emerald-800 dark:text-emerald-300 text-xs font-bold shadow-sm">
-              {resetDoneMsg}
-            </div>
-          )}
         </div>
       </div>
     </div>

@@ -1,64 +1,129 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import { INITIAL_VEHICLES, INITIAL_MECHANICS, INITIAL_ANNOUNCEMENTS } from './src/data/presetData';
-import { VehicleRecord, Mechanic, Announcement, ActivityLog } from './src/types';
-import { getDefaultTasksForService } from './src/utils/serviceTasks';
+import {
+  createStartupPersistence,
+} from './server/persistence-selection';
+import {
+  createInMemoryPersistence,
+  InvalidMechanicAssignmentError,
+  type CreateVehicleInput,
+  type UpdateVehicleInput,
+  type WorkshopPersistence,
+} from './server/persistence';
+import {
+  getOperatorName,
+  requireOperatorPermission,
+  type OperatorAuthenticator,
+} from './server/operator-auth';
+import { hasOperatorPermission } from './src/lib/operatorAccess';
 
-const app = express();
 const PORT = 3000;
 
-app.use(express.json({ limit: '10mb' }));
+type AsyncHandler = (req: Request, res: Response, next: NextFunction) => Promise<void>;
 
-// In-Memory Database Store
-let vehiclesStore: VehicleRecord[] = [...INITIAL_VEHICLES];
-let mechanicsStore: Mechanic[] = [...INITIAL_MECHANICS];
-let announcementsStore: Announcement[] = [...INITIAL_ANNOUNCEMENTS];
-let activityLogsStore: ActivityLog[] = [
-  {
-    id: 'log-1',
-    vehicleId: 'v-106',
-    plateNumber: 'PNG 883',
-    action: 'Status updated to Service Completed',
-    previousStatus: 'in_progress',
-    newStatus: 'completed',
-    timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-    operatorName: 'Master Azman',
-  },
-  {
-    id: 'log-2',
-    vehicleId: 'v-107',
-    plateNumber: 'ND 5512',
-    action: 'Status updated to Service Completed',
-    previousStatus: 'in_progress',
-    newStatus: 'completed',
-    timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
-    operatorName: 'Technician Hafiz',
-  },
-];
+const asyncHandler = (handler: AsyncHandler) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    void handler(req, res, next).catch(next);
+  };
 
-// SSE Clients Registry for Real-Time Live Push
-interface SSEClient {
-  id: string;
-  res: Response;
-}
-let sseClients: SSEClient[] = [];
+export function createApp(
+  persistence: WorkshopPersistence = createInMemoryPersistence(),
+  authenticateOperator?: OperatorAuthenticator
+) {
+  const app = express();
 
-function broadcastToClients(eventType: string, payload: unknown) {
-  const data = JSON.stringify({ type: eventType, data: payload, timestamp: new Date().toISOString() });
-  sseClients.forEach((client) => {
-    try {
-      client.res.write(`data: ${data}\n\n`);
-    } catch (e) {
-      console.error('Failed to write SSE to client', client.id, e);
-    }
-  });
-}
+  app.use(express.json({ limit: '10mb' }));
 
-// REST API Endpoints
+  // SSE Clients Registry for Real-Time Live Push
+  interface SSEClient {
+    id: string;
+    res: Response;
+  }
+  let sseClients: SSEClient[] = [];
 
-// SSE Real-Time Event Stream
-app.get('/api/events', (req: Request, res: Response) => {
+  function broadcastToClients(eventType: string, payload: unknown) {
+    const data = JSON.stringify({ type: eventType, data: payload, timestamp: new Date().toISOString() });
+    sseClients.forEach((client) => {
+      try {
+        client.res.write(`data: ${data}\n\n`);
+      } catch (e) {
+        console.error('Failed to write SSE to client', client.id, e);
+      }
+    });
+  }
+
+  const operatorPermission = (
+    permission: Parameters<typeof requireOperatorPermission>[0]
+  ) => requireOperatorPermission(permission, authenticateOperator);
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    value !== null && typeof value === 'object' && !Array.isArray(value);
+  const hasOnlyKeys = (body: Record<string, unknown>, keys: readonly string[]) =>
+    Object.keys(body).every((key) => keys.includes(key));
+  const isAnnouncementType = (
+    value: unknown
+  ): value is 'info' | 'alert' | 'promo' =>
+    value === 'info' || value === 'alert' || value === 'promo';
+  const isOptionalStringField = (body: Record<string, unknown>, key: string) =>
+    body[key] === undefined || typeof body[key] === 'string';
+  const isTaskList = (value: unknown) =>
+    value === undefined ||
+    (Array.isArray(value) && value.every((task) =>
+      isRecord(task) &&
+      typeof task.id === 'string' &&
+      typeof task.title === 'string' &&
+      typeof task.completed === 'boolean' &&
+      (task.completedAt === undefined || typeof task.completedAt === 'string')
+    ));
+  const isCreateVehiclePayload = (
+    body: Record<string, unknown>
+  ): body is Record<string, unknown> & CreateVehicleInput => {
+    const stringFields = [
+      'ownerPhone', 'vehicleModel', 'serviceType', 'photoUrl', 'bayNumber', 'notes',
+      'mechanicId',
+    ];
+    return hasOnlyKeys(body, [
+      'ownerName', 'ownerPhone', 'plateNumber', 'vehicleMake', 'vehicleModel',
+      'serviceType', 'photoUrl', 'bayNumber', 'estimatedDurationMinutes', 'notes',
+      'priority', 'mechanicId', 'tasks',
+    ]) &&
+      typeof body.ownerName === 'string' &&
+      typeof body.plateNumber === 'string' &&
+      typeof body.vehicleMake === 'string' &&
+      stringFields.every((key) => isOptionalStringField(body, key)) &&
+      (body.estimatedDurationMinutes === undefined ||
+        (typeof body.estimatedDurationMinutes === 'number' &&
+          Number.isFinite(body.estimatedDurationMinutes))) &&
+      (body.priority === undefined ||
+        body.priority === 'normal' || body.priority === 'express' || body.priority === 'vip') &&
+      isTaskList(body.tasks);
+  };
+  const isVehicleUpdatePayload = (
+    body: Record<string, unknown>
+  ): body is Record<string, unknown> & UpdateVehicleInput => {
+    const stringFields = [
+      'ownerName', 'ownerPhone', 'plateNumber', 'vehicleMake', 'vehicleModel',
+      'serviceType', 'mechanicId', 'photoUrl', 'bayNumber', 'notes',
+    ];
+    return hasOnlyKeys(body, [
+      ...stringFields, 'tasks', 'status', 'estimatedDurationMinutes', 'priority',
+    ]) &&
+      stringFields.every((key) => isOptionalStringField(body, key)) &&
+      (body.status === undefined ||
+        body.status === 'incoming' || body.status === 'in_progress' ||
+        body.status === 'completed' || body.status === 'delivered') &&
+      (body.estimatedDurationMinutes === undefined ||
+        (typeof body.estimatedDurationMinutes === 'number' &&
+          Number.isFinite(body.estimatedDurationMinutes))) &&
+      (body.priority === undefined ||
+        body.priority === 'normal' || body.priority === 'express' || body.priority === 'vip') &&
+      isTaskList(body.tasks);
+  };
+
+  // REST API Endpoints
+
+  // SSE Real-Time Event Stream
+  app.get('/api/events', (req: Request, res: Response) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -77,17 +142,44 @@ app.get('/api/events', (req: Request, res: Response) => {
 });
 
 // GET /api/vehicles
-app.get('/api/vehicles', (_req: Request, res: Response) => {
-  res.json({
-    vehicles: vehiclesStore,
-    mechanics: mechanicsStore,
-    announcements: announcementsStore,
-    activityLogs: activityLogsStore,
-  });
-});
+  app.get('/api/vehicles', asyncHandler(async (_req, res) => {
+    res.json(await persistence.getSnapshot());
+  }));
 
 // POST /api/vehicles (Intake new vehicle)
-app.post('/api/vehicles', (req: Request, res: Response) => {
+  app.post('/api/vehicles', operatorPermission('registerVehicles'), asyncHandler(async (req, res) => {
+  if (!isRecord(req.body)) {
+    res.status(400).json({ error: 'Vehicle data is invalid.' });
+    return;
+  }
+  if (
+    typeof req.body.ownerName !== 'string' || !req.body.ownerName.trim() ||
+    typeof req.body.plateNumber !== 'string' || !req.body.plateNumber.trim() ||
+    typeof req.body.vehicleMake !== 'string' || !req.body.vehicleMake.trim()
+  ) {
+    res.status(400).json({
+      error: 'Owner name, plate number, and vehicle make are required.',
+    });
+    return;
+  }
+  if (!isCreateVehiclePayload(req.body)) {
+    res.status(400).json({ error: 'Vehicle data is invalid.' });
+    return;
+  }
+  const operator = req.operator;
+  if (!operator) {
+    res.status(503).json({ error: 'Operator verification is temporarily unavailable.' });
+    return;
+  }
+  if (
+    req.body.mechanicId !== undefined &&
+    req.body.mechanicId !== null &&
+    req.body.mechanicId !== '' &&
+    !hasOperatorPermission(operator.role, 'assignMechanics')
+  ) {
+    res.status(403).json({ error: 'Only administrators may assign mechanics.' });
+    return;
+  }
   const {
     ownerName,
     ownerPhone,
@@ -108,250 +200,186 @@ app.post('/api/vehicles', (req: Request, res: Response) => {
     return;
   }
 
-  const newId = `v-${Date.now()}`;
-  const nowIso = new Date().toISOString();
-
-  let assignedMechanicName: string | undefined = undefined;
-  if (mechanicId) {
-    const mech = mechanicsStore.find((m) => m.id === mechanicId);
-    if (mech) {
-      assignedMechanicName = mech.name;
-      mech.activeJobsCount += 1;
-      mech.status = 'busy';
+  let result: Awaited<ReturnType<WorkshopPersistence['createVehicle']>>;
+  try {
+    result = await persistence.createVehicle({
+      ownerName,
+      ownerPhone,
+      plateNumber,
+      vehicleMake,
+      vehicleModel,
+      serviceType,
+      photoUrl,
+      bayNumber,
+      estimatedDurationMinutes,
+      notes,
+      priority,
+      mechanicId,
+      tasks: req.body.tasks,
+      operatorName: getOperatorName(req),
+    });
+  } catch (error) {
+    if (error instanceof InvalidMechanicAssignmentError) {
+      res.status(400).json({ error: error.message });
+      return;
     }
+    throw error;
   }
 
-  const newVehicle: VehicleRecord = {
-    id: newId,
-    ownerName: ownerName.trim(),
-    ownerPhone: ownerPhone ? ownerPhone.trim() : '',
-    plateNumber: plateNumber.trim().toUpperCase(),
-    vehicleMake: vehicleMake.trim(),
-    vehicleModel: vehicleModel ? vehicleModel.trim() : vehicleMake.trim(),
-    serviceType: serviceType || 'General Inspection',
-    tasks: req.body.tasks && Array.isArray(req.body.tasks) && req.body.tasks.length > 0
-      ? req.body.tasks
-      : getDefaultTasksForService(serviceType || 'General Inspection'),
-    status: 'incoming',
-    mechanicId,
-    mechanicName: assignedMechanicName,
-    photoUrl: photoUrl || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80',
-    bayNumber: bayNumber || 'Bay 01',
-    entryTime: nowIso,
-    estimatedDurationMinutes: Number(estimatedDurationMinutes) || 45,
-    notes: notes || '',
-    priority: priority || 'normal',
-    lastUpdated: nowIso,
-  };
-
-  vehiclesStore.unshift(newVehicle);
-
-  const log: ActivityLog = {
-    id: `log-${Date.now()}`,
-    vehicleId: newVehicle.id,
-    plateNumber: newVehicle.plateNumber,
-    action: `Registered incoming vehicle (${newVehicle.vehicleMake} ${newVehicle.vehicleModel})`,
-    newStatus: 'incoming',
-    timestamp: nowIso,
-    operatorName: 'Workshop Operator',
-  };
-  activityLogsStore.unshift(log);
-
-  broadcastToClients('VEHICLE_CREATED', { vehicle: newVehicle, log });
-  res.status(201).json({ vehicle: newVehicle, log });
-});
+  broadcastToClients('VEHICLE_CREATED', result);
+  res.status(201).json(result);
+}));
 
 // PATCH /api/vehicles/:id (Update status, mechanic, etc.)
-app.patch('/api/vehicles/:id', (req: Request, res: Response) => {
-  const { id } = req.params;
-  const vehicleIndex = vehiclesStore.findIndex((v) => v.id === id);
-
-  if (vehicleIndex === -1) {
-    res.status(404).json({ error: 'Vehicle not found.' });
-    return;
-  }
-
-  const currentVehicle = vehiclesStore[vehicleIndex];
-  const previousStatus = currentVehicle.status;
-  const updates = req.body;
-  const nowIso = new Date().toISOString();
-
-  let statusChangedToCompleted = false;
-
-  // Track state transitions
-  if (updates.status && updates.status !== previousStatus) {
-    if (updates.status === 'in_progress' && !currentVehicle.startTime) {
-      updates.startTime = nowIso;
+  app.patch(
+    '/api/vehicles/:id',
+    operatorPermission('updateServiceProgress'),
+    asyncHandler(async (req, res) => {
+    if (!isRecord(req.body) || !isVehicleUpdatePayload(req.body)) {
+      res.status(400).json({ error: 'Vehicle updates are invalid.' });
+      return;
     }
-    if (updates.status === 'completed' && !currentVehicle.completionTime) {
-      updates.completionTime = nowIso;
-      statusChangedToCompleted = true;
-      if (currentVehicle.tasks) {
-        updates.tasks = currentVehicle.tasks.map((t) => ({
-          ...t,
-          completed: true,
-          completedAt: t.completedAt || nowIso,
-        }));
+    const operator = req.operator;
+    if (!operator) {
+      res.status(503).json({ error: 'Operator verification is temporarily unavailable.' });
+      return;
+    }
+    if (
+      Object.hasOwn(req.body, 'mechanicId') &&
+      !hasOperatorPermission(operator.role, 'assignMechanics')
+    ) {
+      res.status(403).json({ error: 'Only administrators may assign mechanics.' });
+      return;
+    }
+    if (
+      Object.hasOwn(req.body, 'tasks') &&
+      !hasOperatorPermission(operator.role, 'updateTaskChecklist')
+    ) {
+      res.status(403).json({ error: 'This operator role cannot update task checklists.' });
+      return;
+    }
+
+    let result: Awaited<ReturnType<WorkshopPersistence['updateVehicle']>>;
+    try {
+      result = await persistence.updateVehicle(req.params.id, {
+        ...req.body,
+        operatorName: getOperatorName(req),
+      });
+    } catch (error) {
+      if (error instanceof InvalidMechanicAssignmentError) {
+        res.status(400).json({ error: error.message });
+        return;
       }
+      throw error;
     }
-  }
-
-  // Handle mechanic assignment change
-  if (updates.mechanicId !== undefined && updates.mechanicId !== currentVehicle.mechanicId) {
-    if (updates.mechanicId) {
-      const newMech = mechanicsStore.find((m) => m.id === updates.mechanicId);
-      if (newMech) {
-        updates.mechanicName = newMech.name;
-        newMech.activeJobsCount += 1;
-      }
-    } else {
-      updates.mechanicName = undefined;
+    if (!result) {
+      res.status(404).json({ error: 'Vehicle not found.' });
+      return;
     }
-    if (currentVehicle.mechanicId) {
-      const oldMech = mechanicsStore.find((m) => m.id === currentVehicle.mechanicId);
-      if (oldMech) {
-        oldMech.activeJobsCount = Math.max(0, oldMech.activeJobsCount - 1);
-      }
-    }
-  }
 
-  const updatedVehicle: VehicleRecord = {
-    ...currentVehicle,
-    ...updates,
-    lastUpdated: nowIso,
-  };
-
-  vehiclesStore[vehicleIndex] = updatedVehicle;
-
-  // Log activity
-  let actionText = 'Updated vehicle record';
-  if (updates.status && updates.status !== previousStatus) {
-    const statusLabels: Record<string, string> = {
-      incoming: 'Incoming Intake',
-      in_progress: 'Repair Work In Progress',
-      completed: 'Service Completed',
-      delivered: 'Delivered to Owner',
-    };
-    actionText = `Status changed to ${statusLabels[updates.status] || updates.status}`;
-  }
-
-  const log: ActivityLog = {
-    id: `log-${Date.now()}`,
-    vehicleId: updatedVehicle.id,
-    plateNumber: updatedVehicle.plateNumber,
-    action: actionText,
-    previousStatus,
-    newStatus: updatedVehicle.status,
-    timestamp: nowIso,
-    operatorName: updates.operatorName || 'Workshop Staff',
-  };
-  activityLogsStore.unshift(log);
-
-  broadcastToClients('VEHICLE_UPDATED', {
-    vehicle: updatedVehicle,
-    log,
-    isCompletedEvent: statusChangedToCompleted,
-  });
-
-  res.json({ vehicle: updatedVehicle, log });
-});
+    broadcastToClients('VEHICLE_UPDATED', {
+      vehicle: result.vehicle,
+      log: result.log,
+      isCompletedEvent: result.isCompletedEvent,
+    });
+    res.json({ vehicle: result.vehicle, log: result.log });
+  }));
 
 // DELETE /api/vehicles/:id
-app.delete('/api/vehicles/:id', (req: Request, res: Response) => {
-  const { id } = req.params;
-  const vehicle = vehiclesStore.find((v) => v.id === id);
+  app.delete('/api/vehicles/:id', operatorPermission('deleteVehicleRecords'), asyncHandler(async (req, res) => {
+    const result = await persistence.deleteVehicle(req.params.id, getOperatorName(req));
+    if (!result) {
+      res.status(404).json({ error: 'Vehicle record not found.' });
+      return;
+    }
 
-  if (!vehicle) {
-    res.status(404).json({ error: 'Vehicle record not found.' });
-    return;
-  }
-
-  vehiclesStore = vehiclesStore.filter((v) => v.id !== id);
-
-  const log: ActivityLog = {
-    id: `log-${Date.now()}`,
-    vehicleId: id,
-    plateNumber: vehicle.plateNumber,
-    action: 'Removed vehicle from active queue',
-    previousStatus: vehicle.status,
-    timestamp: new Date().toISOString(),
-    operatorName: 'System Admin',
-  };
-  activityLogsStore.unshift(log);
-
-  broadcastToClients('VEHICLE_DELETED', { vehicleId: id, log });
-  res.json({ success: true, vehicleId: id });
-});
+    broadcastToClients('VEHICLE_DELETED', result);
+    res.json({ success: true, vehicleId: result.vehicleId });
+  }));
 
 // GET /api/announcements
-app.get('/api/announcements', (_req: Request, res: Response) => {
-  res.json({ announcements: announcementsStore });
-});
+  app.get('/api/announcements', asyncHandler(async (_req, res) => {
+    res.json({ announcements: await persistence.listAnnouncements() });
+  }));
 
 // POST /api/announcements
-app.post('/api/announcements', (req: Request, res: Response) => {
-  const { text, type } = req.body;
-  if (!text) {
+  app.post('/api/announcements', operatorPermission('manageMechanicsAndAnnouncements'), asyncHandler(async (req, res) => {
+  if (!isRecord(req.body)) {
+    res.status(400).json({ error: 'Announcement data is invalid.' });
+    return;
+  }
+  if (!hasOnlyKeys(req.body, ['text', 'type'])) {
+    res.status(400).json({ error: 'Announcement data is invalid.' });
+    return;
+  }
+  const text = typeof req.body.text === 'string' ? req.body.text : undefined;
+  const type = isAnnouncementType(req.body.type) ? req.body.type : undefined;
+  if (!text?.trim()) {
     res.status(400).json({ error: 'Announcement text is required.' });
     return;
   }
-  const newAnn: Announcement = {
-    id: `ann-${Date.now()}`,
-    text: text.trim().toUpperCase(),
-    active: true,
-    type: type || 'info',
-    createdAt: new Date().toISOString(),
-  };
-  announcementsStore.unshift(newAnn);
-  broadcastToClients('ANNOUNCEMENTS_UPDATED', { announcements: announcementsStore });
-  res.status(201).json({ announcement: newAnn });
-});
+  if (req.body.type !== undefined && type === undefined) {
+    res.status(400).json({ error: 'Announcement data is invalid.' });
+    return;
+  }
+  const result = await persistence.createAnnouncement({ text, type });
+  broadcastToClients('ANNOUNCEMENTS_UPDATED', { announcements: result.announcements });
+  res.status(201).json({ announcement: result.announcement });
+}));
 
 // DELETE /api/announcements/:id
-app.delete('/api/announcements/:id', (req: Request, res: Response) => {
-  const { id } = req.params;
-  announcementsStore = announcementsStore.filter((a) => a.id !== id);
-  broadcastToClients('ANNOUNCEMENTS_UPDATED', { announcements: announcementsStore });
-  res.json({ success: true, announcementId: id });
-});
+  app.delete('/api/announcements/:id', operatorPermission('manageMechanicsAndAnnouncements'), asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const result = await persistence.deleteAnnouncement(id);
+    if (!result) {
+      res.status(404).json({ error: 'Announcement not found.' });
+      return;
+    }
+    broadcastToClients('ANNOUNCEMENTS_UPDATED', { announcements: result.announcements });
+    res.json({ success: true, announcementId: result.announcementId });
+  }));
 
 // PUT /api/announcements/:id
-app.put('/api/announcements/:id', (req: Request, res: Response) => {
+  app.put('/api/announcements/:id', operatorPermission('manageMechanicsAndAnnouncements'), asyncHandler(async (req, res) => {
+  if (
+    !isRecord(req.body) ||
+    !hasOnlyKeys(req.body, ['text', 'type', 'active'])
+  ) {
+    res.status(400).json({ error: 'Announcement updates are invalid.' });
+    return;
+  }
   const { id } = req.params;
-  const { text, type, active } = req.body;
-  const index = announcementsStore.findIndex((a) => a.id === id);
-  if (index === -1) {
+  const text = typeof req.body.text === 'string' ? req.body.text : undefined;
+  const type = isAnnouncementType(req.body.type) ? req.body.type : undefined;
+  const active = typeof req.body.active === 'boolean' ? req.body.active : undefined;
+  if (req.body.text !== undefined && text === undefined) {
+    res.status(400).json({ error: 'Announcement updates are invalid.' });
+    return;
+  }
+  if (req.body.type !== undefined && type === undefined) {
+    res.status(400).json({ error: 'Announcement updates are invalid.' });
+    return;
+  }
+  if (req.body.active !== undefined && active === undefined) {
+    res.status(400).json({ error: 'Announcement updates are invalid.' });
+    return;
+  }
+  const result = await persistence.updateAnnouncement(id, { text, type, active });
+  if (!result) {
     res.status(404).json({ error: 'Announcement not found.' });
     return;
   }
-  const current = announcementsStore[index];
-  const updated: Announcement = {
-    ...current,
-    text: typeof text === 'string' && text.trim() ? text.trim().toUpperCase() : current.text,
-    type: type || current.type,
-    active: typeof active === 'boolean' ? active : current.active,
-  };
-  announcementsStore[index] = updated;
-  broadcastToClients('ANNOUNCEMENTS_UPDATED', { announcements: announcementsStore });
-  res.json({ announcement: updated });
-});
+  broadcastToClients('ANNOUNCEMENTS_UPDATED', { announcements: result.announcements });
+  res.json({ announcement: result.announcement });
+}));
 
-// POST /api/reset (Reset Demo Data)
-app.post('/api/reset', (_req: Request, res: Response) => {
-  vehiclesStore = [...INITIAL_VEHICLES];
-  mechanicsStore = [...INITIAL_MECHANICS];
-  announcementsStore = [...INITIAL_ANNOUNCEMENTS];
-  activityLogsStore = [];
-  broadcastToClients('DATA_RESET', {
-    vehicles: vehiclesStore,
-    mechanics: mechanicsStore,
-    announcements: announcementsStore,
-  });
-  res.json({ success: true, message: 'Workshop display state reset to initial preset.' });
-});
+  return app;
+}
 
 // Start Express Server & Vite Middleware
-async function startServer() {
+export async function startServer() {
+  const app = createApp(createStartupPersistence());
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -370,5 +398,3 @@ async function startServer() {
     console.log(`🚗 Workshop Display System running at http://0.0.0.0:${PORT}`);
   });
 }
-
-startServer();

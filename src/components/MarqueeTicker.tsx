@@ -13,7 +13,7 @@ export const MarqueeTicker: React.FC<MarqueeTickerProps> = ({ announcements, rec
   const tickerText =
     activeAnnouncements.length > 0
       ? activeAnnouncements.map((a) => a.text).join('   ✦   ')
-      : t('defaultTickerText');
+      : t('noAnnouncementsToDisplay');
 
   return (
     <div className="px-3 sm:px-6 py-2 z-30">
@@ -49,5 +49,3 @@ export const MarqueeTicker: React.FC<MarqueeTickerProps> = ({ announcements, rec
     </div>
   );
 };
-
-

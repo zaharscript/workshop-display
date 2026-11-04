@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ViewMode } from '../types';
-import { Tv, Smartphone, Settings, Volume2, VolumeX, RefreshCw, ExternalLink, Sun, Moon } from 'lucide-react';
+import { Tv, Smartphone, Settings, Volume2, VolumeX, ExternalLink, Sun, Moon } from 'lucide-react';
 import { audioNotifier } from '../lib/audioNotifier';
 import { t } from '../lib/i18n';
 import { QESFordLogo } from './QESFordLogo';
@@ -12,21 +12,21 @@ interface HeaderNavProps {
   incomingCount: number;
   inProgressCount: number;
   completedCount: number;
-  onResetData: () => void;
   isLargeScreen?: boolean;
+  /** When false (mechanic role or unauthenticated) the Settings button is hidden. */
+  isAdmin?: boolean;
 }
 
 export const HeaderNav: React.FC<HeaderNavProps> = ({
   currentView,
   onViewChange,
   connected,
-  onResetData,
   isLargeScreen,
+  isAdmin = false,
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
   const [isMuted, setIsMuted] = useState<boolean>(audioNotifier.getMutedStatus());
-  const [confirmReset, setConfirmReset] = useState<boolean>(false);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     return localStorage.getItem('qes_clay_theme') === 'dark';
   });
@@ -99,7 +99,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             </div>
           )}
 
-          {/* Settings / Tetapan Button */}
+          {/* Settings / Tetapan Button — admin-only */}
+          {isAdmin && (
           <button
             onClick={() => onViewChange(currentView === 'settings' ? (isLargeScreen ? 'tv' : 'mobile') : 'settings')}
             className={`clay-btn px-4 py-1.5 text-xs font-serif font-semibold tracking-wide ${
@@ -112,6 +113,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             <Settings className="w-3.5 h-3.5 mr-1.5" />
             <span className="hidden md:inline">{currentView === 'settings' ? 'Tutup Tetapan' : 'Tetapan'}</span>
           </button>
+          )}
         </div>
 
         {/* Right Status & Controls */}
@@ -170,37 +172,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             <ExternalLink className="w-4 h-4 text-[#2b4036] dark:text-[#c4d8ce]" />
           </button>
 
-          {/* Reset Demo Data Button */}
-          {confirmReset ? (
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => {
-                  onResetData();
-                  setConfirmReset(false);
-                }}
-                className="clay-btn clay-btn-rose px-3 py-1.5 text-xs font-serif"
-              >
-                {t('reset')}
-              </button>
-              <button
-                onClick={() => setConfirmReset(false)}
-                className="clay-btn clay-btn-neutral px-2.5 py-1.5 text-xs text-[#5c4f42]"
-              >
-                {t('cancel')}
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setConfirmReset(true)}
-              className="clay-btn clay-btn-neutral p-2 rounded-full hidden md:flex text-[#8c7e70] hover:text-[#c45c3d]"
-              title="Set Semula Data Sampel"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          )}
         </div>
       </div>
     </header>
   );
 };
-

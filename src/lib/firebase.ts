@@ -1,4 +1,5 @@
 import { getApps, initializeApp, type FirebaseOptions } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -33,5 +34,6 @@ const firebaseConfig: FirebaseOptions = {
 const existingDefaultApp = getApps().find((existingApp) => existingApp.name === '[DEFAULT]');
 
 export const app = existingDefaultApp ?? initializeApp(firebaseConfig);
+export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);

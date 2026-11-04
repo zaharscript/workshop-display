@@ -10,7 +10,6 @@ export const msTranslations = {
   offline: 'TERPUTUS',
   currentTime: 'Masa Semasa',
   date: 'Tarikh',
-  reset: 'Set Semula',
   cancel: 'Batal',
 
   // TV View
@@ -34,9 +33,9 @@ export const msTranslations = {
 
   // Marquee Ticker
   announcements: 'PENGUMUMAN',
+  noAnnouncementsToDisplay: 'Tiada pengumuman buat masa ini.',
   attentionCarPlate: 'PERHATIAN: PLAT KENDERAAN',
   isReadyForPickup: 'TELAH SIAP DAN BOLEH DIANTAR / DIAMBIL!',
-  defaultTickerText: 'QES FORD AUTOPARTS • RELIABLE PRODUCT FOR YOU • WAKTU OPERASI: ISNIN-JUMAAT (8.30AM - 5.30PM), SABTU (8.30AM - 2.30PM) • AHAD & CUTI UMUM: TUTUP • TEL/WHATSAPP: 011-3786 6127 • NO. 19, JALAN IMPIAN PUTRA 1/4, BANDAR SERI PUTRA, KAJANG',
 
   // Mobile Operator View
   operatorConsole: 'KONSOL OPERATOR // KAWALAN LANGSUNG',
@@ -137,18 +136,23 @@ export const msTranslations = {
   noActiveTickers: 'Tiada pengumuman aktif. Tambah pengumuman baharu di atas.',
   deletingTicker: 'Memadam...',
   workshopTechniciansRoster: 'SENARAI JURUTEKNIK & MEKANIK BENGKEL',
+  noTechniciansAvailable: 'Tiada juruteknik tersedia.',
   activeJobs: 'Tugasan Aktif:',
   architectureDatabaseOptimization: 'SENIBINA & OPTIMASI PANGKALAN DATA',
   dualDisplayChannels: 'Saluran Paparan Dwi (TV View & Operator Console)',
-  resetWorkshopQueue: 'Reset Giliran Bengkel',
-  restoresInitialSampleData: 'Mengembalikan data sampel asal bengkel',
-  resetSampleDataBtn: 'Set Semula Data Sampel',
-  queueResetSuccess: 'Data giliran bengkel telah berjaya diset semula!',
 
   // Activity Audit Log
   liveActivityAuditLog: 'Log Audit Aktiviti Langsung',
   closeLog: 'Tutup Log',
   noLogsYet: 'Tiada log aktiviti lagi',
+
+  // Operator Authentication
+  operatorLogin: 'Log Masuk Operator',
+  operatorLogout: 'Log Keluar',
+  operatorAuthorized: 'Operator Sah',
+  readOnlyModeBanner: 'MOD BACA SAHAJA — Log masuk diperlukan untuk intake kenderaan dan kemas kini status.',
+  readOnlyModeBadge: 'Mod Baca Sahaja',
+  signInToManage: 'Log masuk untuk mengurus bengkel',
 };
 
 export type TranslationKey = keyof typeof msTranslations;

@@ -28,6 +28,8 @@ interface NewVehicleModalProps {
   onClose: () => void;
   onSubmit: (payload: Partial<VehicleRecord>) => Promise<void>;
   mechanics: Mechanic[];
+  /** When false the mechanic-assignment dropdown is hidden (mechanic role). */
+  canAssignMechanic?: boolean;
 }
 
 export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({
@@ -35,6 +37,7 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({
   onClose,
   onSubmit,
   mechanics,
+  canAssignMechanic = true,
 }) => {
   const [ownerName, setOwnerName] = useState('');
   const [ownerPhone, setOwnerPhone] = useState('');
@@ -385,6 +388,8 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({
 
           {/* Mechanic Assignment & Bay */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
+            {/* Admin-only: mechanic role operators cannot assign a technician */}
+            {canAssignMechanic ? (
             <div>
               <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">
                 {t('assignTechnician')}
@@ -402,6 +407,11 @@ export const NewVehicleModal: React.FC<NewVehicleModalProps> = ({
                 ))}
               </select>
             </div>
+            ) : (
+            <div className="clay-inset px-3 py-2 text-xs text-slate-500 dark:text-slate-400 font-mono italic">
+              Penugasan juruteknik — hanya pentadbir.
+            </div>
+            )}
 
             <div>
               <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">
